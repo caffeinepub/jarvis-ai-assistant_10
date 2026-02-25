@@ -1,0 +1,70 @@
+{
+  "kind": "build_request",
+  "title": "Fix voice interaction and implement fully autonomous hands-free background operation",
+  "projectName": "JARVIS Assistant",
+  "priority": "high",
+  "requirements": [
+    {
+      "id": "REQ-13",
+      "text": "Fix the broken voice interaction system. The Web Speech API (SpeechRecognition) must initialize correctly on page load, request microphone permission automatically, and begin continuous background listening without requiring any user click or touch. Debug and resolve any errors preventing speech recognition from starting, including browser compatibility issues, permission handling failures, or recognition not restarting after it stops. The assistant must be fully operational hands-free from the moment the dashboard loads.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "voice is not working"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Microphone permission is requested automatically on dashboard load without any user interaction",
+        "SpeechRecognition starts in continuous mode immediately after permission is granted",
+        "The assistant detects the wake word ('Jarvis' by default) without any button press",
+        "After wake word detection, the assistant enters full listening mode and processes the command",
+        "The assistant responds with synthesized speech (SpeechSynthesis) without any manual trigger",
+        "If recognition stops or errors out, it automatically restarts within 1 second",
+        "Console shows no uncaught errors related to speech recognition initialization",
+        "The WaveformVisualizer and StatusIndicator reflect the correct listening/processing/speaking states in real time"
+      ]
+    },
+    {
+      "id": "REQ-14",
+      "text": "Implement fully autonomous background operation mode. The assistant must run silently and continuously in the background — listening for the wake word, processing commands, and executing actions (open URLs, control volume/brightness, scroll, search Wikipedia, respond with speech) — all without any touch or click from the user. This includes: (1) auto-starting the wake word listener on app load, (2) automatically restarting recognition after each interaction or timeout, (3) executing all PC control commands (open app/URL, volume, brightness, scroll) purely via voice without needing UI button clicks, and (4) ensuring the full voice command loop (listen → process → respond → return to listening) cycles automatically with no manual intervention required at any step.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "i want like app which run in background fully automatic open any open do anything without touchuning"
+        ]
+      },
+      "acceptanceCriteria": [
+        "On dashboard load, wake word listening begins automatically with no user interaction",
+        "After speaking a command and receiving a response, the assistant automatically returns to wake word listening mode",
+        "Voice commands alone (no UI clicks) can trigger: open URL, volume up/down, brightness up/down, scroll up/down, Wikipedia search",
+        "The recognition loop never permanently stops — it restarts automatically after errors, end events, or timeouts",
+        "The full voice interaction cycle (wake word → command → response → back to listening) completes end-to-end without any touch input",
+        "Status indicator always shows the current state (wake-listening, listening, processing, speaking) updating in real time",
+        "The app functions correctly even when the browser window is not in focus, to the extent permitted by browser APIs"
+      ]
+    }
+  ],
+  "constraints": [
+    "Do not modify files under frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, or frontend/src/components/ui",
+    "Use only the browser's native Web Speech API (SpeechRecognition and SpeechSynthesis) — no external voice/AI service integrations",
+    "All voice command processing and PC control logic must remain client-side in the frontend hooks",
+    "Backend schema and Motoko actor must not be changed unless strictly necessary for this fix"
+  ],
+  "nonGoals": [
+    "Adding new voice commands or PC control features beyond what is already implemented",
+    "Changing the visual design or animations of the dashboard",
+    "Implementing push notifications or native OS background process APIs",
+    "Modifying user authentication, registration, or login flows",
+    "Adding new backend endpoints or data models"
+  ],
+  "imageRequirements": {
+    "required": [],
+    "edits": []
+  }
+}

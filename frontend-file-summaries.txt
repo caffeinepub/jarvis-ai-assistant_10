@@ -1,0 +1,20 @@
+{
+  "frontend/src/hooks/useSpeechRecognition.ts": "Web Speech API hook with autoRestart support, now importing all Speech API types from the shared `../types/speechRecognition` module instead of defining them locally, eliminating the duplicate global declaration conflict.",
+  "frontend/src/components/PCControlsPanel.tsx": "PC controls panel with volume, brightness, scroll, URL opener, and Wikipedia search buttons; fixes the icon typing error by extracting ControlBtn as a top-level component with a properly typed LucideProps-based icon prop.",
+  "frontend/src/components/SearchResultPanel.tsx": "Modal overlay component displaying Wikipedia search results with title, summary, thumbnail, and a link to the full article.",
+  "frontend/src/components/BrightnessOverlay.tsx": "Full-screen fixed overlay div with id \"brightness-overlay\" that simulates screen brightness changes via CSS opacity, mounted at root level.",
+  "frontend/src/components/PasswordInput.tsx": "Reusable password input with eye/eye-off toggle button for show/hide password functionality, styled with JARVIS theme.",
+  "frontend/src/components/AppHeader.tsx": "Application header with arc-reactor logo, JARVIS title, status indicator, mode toggle, settings navigation, user profile display, and logout functionality.",
+  "frontend/src/components/WakeWordSettings.tsx": "Settings panel component for viewing and updating the user's wake word, with save confirmation and backend persistence via useSetWakeWord.",
+  "frontend/src/components/LanguageSelector.tsx": "Language selection dropdown using shadcn Select component, showing all supported world languages with native names, persisting selection to backend.",
+  "frontend/src/components/MentorSettings.tsx": "Mentor character configuration panel with preset character buttons and free-text input, saving the selected mentor to the backend.",
+  "frontend/src/components/MemoryPanel.tsx": "Conversation memory viewer showing all stored memory entries with a two-step confirm-to-clear button, using React Query for data fetching.",
+  "frontend/src/pages/LoginPage.tsx": "Login page with JARVIS holographic background, Internet Identity connection step, email/password form with eye-toggle, and error handling with navigation to transition screen on success.",
+  "frontend/src/pages/RegisterPage.tsx": "Registration page with gold-themed JARVIS holographic background, Internet Identity connection, username/email/password/confirm-password form with validation and success redirect.",
+  "frontend/src/pages/TransitionScreen.tsx": "Full-screen animated boot sequence with typewriter text, arc-reactor logo, HUD rings, and time-based personalized greeting before auto-navigating to dashboard.",
+  "frontend/src/pages/DashboardPage.tsx": "Main JARVIS dashboard updated to show auto-listening status with a hint banner displaying the wake word, an AUTO-LISTEN status row in the system panel, and the wake word listed first in the voice commands reference panel.",
+  "frontend/src/pages/SettingsPage.tsx": "Settings page with tabbed interface (Voice, Language, Mentor, Memory) containing all configuration components, accessible from the dashboard header.",
+  "frontend/src/App.tsx": "Main app component with TanStack Router setup defining routes for login, register, transition, dashboard, and settings, with an AuthGuard wrapper for protected routes.",
+  "frontend/src/hooks/useVoiceAssistant.ts": "Fully autonomous voice assistant hook that imports all Speech API types from the shared `../types/speechRecognition` module, auto-starts wake word listening on mount, and manages the complete voice interaction cycle without any user interaction required.",
+  "frontend/src/types/speechRecognition.ts": "Single source of truth for all Web Speech API TypeScript interfaces (ISpeechRecognition, ISpeechRecognitionEvent, ISpeechRecognitionErrorEvent, etc.) with a single `declare global` Window augmentation to prevent duplicate declaration conflicts."
+}

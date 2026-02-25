@@ -1,0 +1,36 @@
+{
+  "kind": "spec_vs_diff_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-25T14:53:33.759Z",
+  "summary": "The diff implements a shared Web Speech API type system, rewrites the voice assistant hook for autonomous background operation, and updates the dashboard to show auto-listening status. The core requirements (REQ-13 and REQ-14) are substantially addressed: the useVoiceAssistant hook auto-starts wake word listening on mount, manages the full voice interaction cycle autonomously, and handles auto-restart on errors/end events. The useSpeechRecognition hook supports autoRestart. However, some specific acceptance criteria cannot be fully verified due to truncation of the hook implementations.",
+  "missing_requirements": [
+    {
+      "id": "REQ-13",
+      "requirement": "If recognition stops or errors out, it automatically restarts within 1 second with up to 2 additional retries",
+      "reason": "The hooks reference restartTimerRef and auto-restart logic, but the implementation is truncated. The specific timing constraint (within 1 second) and retry count cannot be confirmed from the visible diff.",
+      "evidence": [
+        "frontend/src/hooks/useSpeechRecognition.ts",
+        "frontend/src/hooks/useVoiceAssistant.ts"
+      ]
+    },
+    {
+      "id": "REQ-14",
+      "requirement": "The app functions correctly even when the browser window is not in focus, to the extent permitted by browser APIs",
+      "reason": "No evidence of Page Visibility API handling, document visibilitychange listeners, or any background tab consideration is visible in the diff. This acceptance criterion is not addressed in any of the shown file changes.",
+      "evidence": [
+        "frontend/src/hooks/useVoiceAssistant.ts",
+        "frontend/src/pages/DashboardPage.tsx"
+      ]
+    }
+  ],
+  "hallucinated_features": [],
+  "confidence": 0.72,
+  "changed_files": [
+    "frontend-file-summaries.txt",
+    "frontend/src/hooks/useSpeechRecognition.ts",
+    "frontend/src/hooks/useVoiceAssistant.ts",
+    "frontend/src/pages/DashboardPage.tsx",
+    "frontend/src/types/speechRecognition.ts",
+    "project_state.json"
+  ]
+}

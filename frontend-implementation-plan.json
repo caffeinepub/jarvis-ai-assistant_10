@@ -1,0 +1,83 @@
+{
+  "kind": "implementation_plan",
+  "version": "1.0",
+  "title": "Fix voice interaction and implement fully autonomous hands-free background operation",
+  "requirements": [
+    {
+      "id": "REQ-13",
+      "summary": "Fix the broken voice interaction system to initialize correctly on page load, request microphone permission automatically, and begin continuous background listening without requiring any user click or touch",
+      "acceptanceCriteria": [
+        "Microphone permission is requested automatically on dashboard load without any user interaction",
+        "SpeechRecognition starts in continuous mode immediately after permission is granted",
+        "The assistant detects the wake word ('Jarvis' by default) without any button press",
+        "After wake word detection, the assistant enters full listening mode and processes the command",
+        "The assistant responds with synthesized speech (SpeechSynthesis) without any manual trigger",
+        "If recognition stops or errors out, it automatically restarts within 1 second",
+        "Console shows no uncaught errors related to speech recognition initialization",
+        "The WaveformVisualizer and StatusIndicator reflect the correct listening/processing/speaking states in real time"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useSpeechRecognition.ts",
+          "operation": "modify",
+          "description": "Fix speech recognition initialization to start automatically without requiring user interaction. Add robust error handling for browser compatibility issues, permission failures, and recognition lifecycle events. Implement automatic restart logic with a 1-second delay when recognition stops or encounters errors. Ensure continuous mode is enabled and the hook properly manages the recognition instance lifecycle to prevent duplicate instances or memory leaks."
+        },
+        {
+          "path": "frontend/src/hooks/useVoiceAssistant.ts",
+          "operation": "modify",
+          "description": "Refactor the voice assistant to auto-start wake word listening immediately when the hook mounts. Remove any dependencies on manual button clicks or user gestures to begin listening. Ensure the full voice interaction cycle (wake word detection → command listening → processing → speech response → return to wake word listening) completes automatically. Add automatic restart logic after each interaction completes or if the recognition stops unexpectedly. Verify all state transitions properly trigger UI updates for StatusIndicator and WaveformVisualizer."
+        },
+        {
+          "path": "frontend/src/pages/DashboardPage.tsx",
+          "operation": "modify",
+          "description": "Update the DashboardPage to trigger automatic voice assistant initialization on mount without requiring any user interaction. Ensure the useVoiceAssistant hook is called with parameters that enable auto-start mode. Remove or disable any UI controls that currently gate voice functionality behind manual clicks. Verify the page properly handles microphone permission requests on load and gracefully displays error states if permission is denied."
+        },
+        {
+          "path": "frontend/src/components/StatusIndicator.tsx",
+          "operation": "modify",
+          "description": "Ensure the StatusIndicator correctly reflects all voice assistant states in real time, including 'wake-listening', 'listening', 'processing', and 'speaking'. Verify state updates trigger immediate re-renders without delays. Add visual feedback for error states or permission issues if needed."
+        },
+        {
+          "path": "frontend/src/components/WaveformVisualizer.tsx",
+          "operation": "modify",
+          "description": "Verify the WaveformVisualizer animations correctly respond to all voice assistant state changes ('idle', 'wake-listening', 'listening', 'processing', 'speaking'). Ensure animations start immediately when the assistant enters listening mode and update smoothly during state transitions."
+        }
+      ]
+    },
+    {
+      "id": "REQ-14",
+      "summary": "Implement fully autonomous background operation mode where the assistant runs silently and continuously in the background, listening for the wake word, processing commands, and executing actions without any touch or click from the user",
+      "acceptanceCriteria": [
+        "On dashboard load, wake word listening begins automatically with no user interaction",
+        "After speaking a command and receiving a response, the assistant automatically returns to wake word listening mode",
+        "Voice commands alone (no UI clicks) can trigger: open URL, volume up/down, brightness up/down, scroll up/down, Wikipedia search",
+        "The recognition loop never permanently stops — it restarts automatically after errors, end events, or timeouts",
+        "The full voice interaction cycle (wake word → command → response → back to listening) completes end-to-end without any touch input",
+        "Status indicator always shows the current state (wake-listening, listening, processing, speaking) updating in real time",
+        "The app functions correctly even when the browser window is not in focus, to the extent permitted by browser APIs"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useVoiceAssistant.ts",
+          "operation": "modify",
+          "description": "Implement a fully autonomous voice command loop that cycles automatically without manual intervention. After processing a command and speaking the response, immediately return to wake word listening mode. Ensure all PC control commands (open URL, volume, brightness, scroll, Wikipedia search) execute purely via voice commands parsed from the transcript, without requiring any UI button clicks. Add persistent restart logic so the recognition loop never permanently stops — if it ends or errors out, restart automatically within 1 second. Verify the assistant can function when the browser window is not in focus, within the constraints of browser APIs."
+        },
+        {
+          "path": "frontend/src/hooks/usePCControls.ts",
+          "operation": "modify",
+          "description": "Ensure all PC control actions (volume up/down, brightness up/down, scroll up/down, open URL, Wikipedia search) can be triggered programmatically from voice commands without requiring any user click on UI buttons. Verify that these controls work correctly when invoked by the voice assistant hook."
+        },
+        {
+          "path": "frontend/src/components/VoiceControlButton.tsx",
+          "operation": "modify",
+          "description": "Update the VoiceControlButton to reflect the current voice assistant state visually but not gate functionality behind clicks. The button should serve as a status indicator and optional manual control, but voice functionality must work independently of button interactions. Ensure the button's visual state (listening, processing, speaking) updates in real time based on the assistant's current state."
+        },
+        {
+          "path": "frontend/src/components/PCControlsPanel.tsx",
+          "operation": "modify",
+          "description": "Verify that the PC controls panel buttons do not interfere with voice-triggered commands. Ensure the panel serves as an optional manual interface but does not prevent voice commands from executing the same actions independently. The panel should remain functional as a fallback UI but not be required for autonomous voice operation."
+        }
+      ]
+    }
+  ]
+}

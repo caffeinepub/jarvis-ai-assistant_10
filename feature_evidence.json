@@ -1,0 +1,45 @@
+{
+  "kind": "feature_evidence_report",
+  "features": [
+    {
+      "featureId": "feature-fix-the-broken-voice-interaction-system-the-web-speech-api-speechrecognition-must-initialize-correctly-on-page-load-request-microphone-permission-automatically-and-begin-continuous-background-listening-without-requiring-any-user-click-or-touch-debug-and-resolve-any-errors-preventing-speech-recognition-from-starting-including-browser-compatibility-issues-permission-handling-failures-or-recognition-not-restarting-after-it-stops-the-assistant-must-be-fully-operational-hands-free-from-the-moment-the-dashboard-loads",
+      "featureTitle": "Fix the broken voice interaction system. The Web Speech API (SpeechRecognition) must initialize correctly on page load, request microphone permission automatically, and begin continuous background listening without requiring any user click or touch. Debug and resolve any errors preventing speech recognition from starting, including browser compatibility issues, permission handling failures, or recognition not restarting after it stops. The assistant must be fully operational hands-free from the moment the dashboard loads.",
+      "files": [
+        "frontend/src/hooks/useSpeechRecognition.ts",
+        "frontend/src/hooks/useVoiceAssistant.ts",
+        "frontend/src/pages/DashboardPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-13"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-implement-fully-autonomous-background-operation-mode-the-assistant-must-run-silently-and-continuously-in-the-background-listening-for-the-wake-word-processing-commands-and-executing-actions-open-urls-control-volume-brightness-scroll-search-wikipedia-respond-with-speech-all-without-any-touch-or-click-from-the-user-this-includes-1-auto-starting-the-wake-word-listener-on-app-load-2-automatically-restarting-recognition-after-each-interaction-or-timeout-3-executing-all-pc-control-commands-open-app-url-volume-brightness-scroll-purely-via-voice-without-needing-ui-button-clicks-and-4-ensuring-the-full-voice-command-loop-listen-process-respond-return-to-listening-cycles-automatically-with-no-manual-intervention-required-at-any-step",
+      "featureTitle": "Implement fully autonomous background operation mode. The assistant must run silently and continuously in the background — listening for the wake word, processing commands, and executing actions (open URLs, control volume/brightness, scroll, search Wikipedia, respond with speech) — all without any touch or click from the user. This includes: (1) auto-starting the wake word listener on app load, (2) automatically restarting recognition after each interaction or timeout, (3) executing all PC control commands (open app/URL, volume, brightness, scroll) purely via voice without needing UI button clicks, and (4) ensuring the full voice command loop (listen → process → respond → return to listening) cycles automatically with no manual intervention required at any step.",
+      "files": [
+        "frontend/src/hooks/useVoiceAssistant.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-14"
+      ],
+      "confidence": "high"
+    }
+  ]
+}

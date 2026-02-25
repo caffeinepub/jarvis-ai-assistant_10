@@ -1,0 +1,213 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectStateVersion": 5,
+  "summary": "A desktop AI assistant app inspired by Iron Man's JARVIS with voice-to-voice interaction, multi-user memory (per email like ChatGPT), animated login/registration, multilingual voice commands, personal/professional language modes, customizable anime/movie mentor characters, PC control features (volume, brightness, scroll, app launch), fully automatic background operation with hands-free control (no touch/click required), wake word activation, and Jarvis-level animations and graphics.",
+  "architectural_notes": [
+    "Desktop app (not mobile) — likely Electron or Python (Tkinter/PyQt) based",
+    "Multi-user architecture: all memory and preferences keyed by login email",
+    "PC control requires OS-level APIs (e.g., pyautogui, pycaw, screen_brightness_control on Python)",
+    "Fully hands-free operation required — no UI interaction needed; all commands triggered by voice only"
+  ],
+  "known_issues": [
+    "Voice interaction is not working in the current build"
+  ],
+  "isFixRequest": true,
+  "existing_features": [
+    {
+      "id": "feature-implement-email-password-user-registration-and-login-system-store-user-credentials-and-profiles-in-the-backend-keyed-by-email-the-registration-page-must-include-a-password-visibility-toggle-eye-icon-high-end-animated-background-with-glowing-arc-reactor-holographic-effects-floating-particle-fields-and-smooth-form-entrance-animations-login-page-must-share-the-same-visual-theme",
+      "title": "Implement email/password user registration and login system. Store user credentials and profiles in the backend keyed by email. The registration page must include a password visibility toggle (eye icon), high-end animated background with glowing arc-reactor/holographic effects, floating particle fields, and smooth form entrance animations. Login page must share the same visual theme.",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-on-successful-login-display-a-full-screen-animated-transition-holographic-hud-powering-up-light-sweep-particle-burst-lasting-2-3-seconds-immediately-after-show-a-personalized-welcome-greeting-based-on-current-time-of-day-good-morning-good-afternoon-or-good-evening-addressed-to-the-logged-in-user-s-name-email",
+      "title": "On successful login, display a full-screen animated transition (holographic HUD powering up, light sweep, particle burst) lasting ~2–3 seconds. Immediately after, show a personalized welcome greeting based on current time of day: 'Good Morning', 'Good Afternoon', or 'Good Evening' addressed to the logged-in user's name/email.",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-build-the-main-assistant-dashboard-with-jarvis-level-professional-animations-and-graphics-animated-circular-hud-rings-holographic-waveform-visualizer-that-reacts-to-voice-input-glowing-energy-lines-floating-3d-arc-reactor-core-rendered-with-react-three-fiber-three-js-scanning-grid-overlays-and-a-pulsing-status-indicator-all-animations-must-be-continuous-and-high-fidelity",
+      "title": "Build the main assistant dashboard with JARVIS-level professional animations and graphics: animated circular HUD rings, holographic waveform visualizer that reacts to voice input, glowing energy lines, floating 3D arc-reactor core rendered with React Three Fiber/Three.js, scanning grid overlays, and a pulsing status indicator. All animations must be continuous and high-fidelity.",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-voice-to-voice-interaction-the-user-speaks-to-the-assistant-using-the-browser-s-web-speech-api-speechrecognition-the-assistant-processes-the-input-and-responds-with-synthesized-speech-speechsynthesis-api-the-assistant-must-listen-respond-and-the-conversation-must-feel-fluid-like-talking-to-jarvis",
+      "title": "Implement voice-to-voice interaction: the user speaks to the assistant using the browser's Web Speech API (SpeechRecognition), the assistant processes the input and responds with synthesized speech (SpeechSynthesis API). The assistant must listen, respond, and the conversation must feel fluid like talking to JARVIS.",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-a-customizable-wake-word-system-the-default-wake-word-is-jarvis-the-assistant-continuously-listens-in-the-background-for-the-wake-word-and-activates-full-listening-mode-upon-detection-users-can-change-their-wake-word-from-the-settings-panel-at-any-time-the-new-wake-word-is-saved-per-user-account-in-the-backend",
+      "title": "Implement a customizable wake word system. The default wake word is 'Jarvis'. The assistant continuously listens in the background for the wake word, and activates full listening mode upon detection. Users can change their wake word from the settings panel at any time; the new wake word is saved per user account in the backend.",
+      "reqIds": [
+        "REQ-5"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-per-user-persistent-conversation-memory-stored-in-the-backend-keyed-by-the-user-s-email-memory-persists-across-sessions-app-close-and-reopen-when-a-user-logs-in-their-previous-conversation-context-and-assistant-memory-are-loaded-and-used-to-personalize-responses-similar-to-chatgpt-memory-different-users-have-completely-separate-memory-stores",
+      "title": "Implement per-user persistent conversation memory stored in the backend, keyed by the user's email. Memory persists across sessions (app close and reopen). When a user logs in, their previous conversation context and assistant memory are loaded and used to personalize responses — similar to ChatGPT memory. Different users have completely separate memory stores.",
+      "reqIds": [
+        "REQ-6"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-multilingual-support-allowing-users-to-change-the-assistant-s-interaction-language-to-any-world-language-either-via-voice-command-e-g-switch-to-spanish-or-through-a-language-selector-in-settings-the-selected-language-affects-both-speech-recognition-input-language-and-speech-synthesis-output-language-language-preference-is-saved-per-user",
+      "title": "Implement multilingual support allowing users to change the assistant's interaction language to any world language, either via voice command (e.g., 'Switch to Spanish') or through a language selector in settings. The selected language affects both speech recognition input language and speech synthesis output language. Language preference is saved per user.",
+      "reqIds": [
+        "REQ-7"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-personal-and-professional-language-speech-mode-per-user-in-personal-mode-the-assistant-speaks-in-a-natural-conversational-human-style-tone-in-the-user-s-chosen-personal-language-default-for-the-demo-user-telugu-in-professional-mode-the-assistant-switches-to-formal-english-or-the-user-s-professional-language-users-toggle-between-modes-by-voice-command-switch-to-professional-switch-to-personal-or-via-a-mode-toggle-button-mode-preference-is-saved-per-user",
+      "title": "Implement Personal and Professional language/speech mode per user. In Personal mode, the assistant speaks in a natural, conversational, human-style tone in the user's chosen personal language (default for the demo user: Telugu). In Professional mode, the assistant switches to formal English (or the user's professional language). Users toggle between modes by voice command ('Switch to professional' / 'Switch to personal') or via a mode toggle button. Mode preference is saved per user.",
+      "reqIds": [
+        "REQ-8"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-a-customizable-mentor-character-feature-the-default-mentor-is-rengoku-kojiro-flame-hashira-from-demon-slayer-the-mentor-appears-as-a-character-avatar-panel-in-the-ui-and-provides-motivational-messages-scheduling-reminders-and-daily-tips-in-the-character-s-speech-style-users-can-change-their-mentor-to-any-anime-or-movie-character-by-typing-the-character-name-in-settings-the-mentor-name-and-style-are-saved-per-user",
+      "title": "Implement a customizable Mentor character feature. The default mentor is Rengoku Kojiro (Flame Hashira from Demon Slayer). The mentor appears as a character avatar/panel in the UI and provides motivational messages, scheduling reminders, and daily tips in the character's speech style. Users can change their mentor to any anime or movie character by typing the character name in settings. The mentor name and style are saved per user.",
+      "reqIds": [
+        "REQ-9"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-pc-control-features-accessible-via-voice-command-and-ui-buttons-volume-up-down-screen-brightness-up-down-via-css-filter-simulation-since-browser-based-scroll-up-down-on-the-current-page-open-applications-or-urls-e-g-open-wikipedia-open-youtube-and-fetch-information-from-wikipedia-or-perform-web-searches-in-response-to-user-queries-display-results-in-a-result-panel",
+      "title": "Implement PC control features accessible via voice command and UI buttons: volume up/down, screen brightness up/down (via CSS filter simulation since browser-based), scroll up/down on the current page, open applications or URLs (e.g., 'Open Wikipedia', 'Open YouTube'), and fetch information from Wikipedia or perform web searches in response to user queries. Display results in a result panel.",
+      "reqIds": [
+        "REQ-10"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-design-a-cohesive-jarvis-inspired-visual-theme-for-the-entire-application-dark-near-black-050a0f-background-cyan-teal-00e5ff-00bcd4-primary-accent-gold-amber-ffa726-secondary-accent-for-mentor-personal-elements-glowing-neon-ui-borders-futuristic-monospace-typography-orbitron-or-rajdhani-and-holographic-scanline-grid-overlay-effects-on-panels-apply-this-theme-consistently-across-all-screens",
+      "title": "Design a cohesive JARVIS-inspired visual theme for the entire application: dark near-black (#050a0f) background, cyan/teal (#00e5ff, #00bcd4) primary accent, gold/amber (#ffa726) secondary accent for mentor/personal elements, glowing neon UI borders, futuristic monospace typography (Orbitron or Rajdhani), and holographic scanline/grid overlay effects on panels. Apply this theme consistently across all screens.",
+      "reqIds": [
+        "REQ-11"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-generate-visual-assets-a-jarvis-arc-reactor-style-logo-icon-a-holographic-hud-background-image-for-the-main-dashboard-and-a-flame-themed-avatar-placeholder-for-the-rengoku-mentor-card",
+      "title": "Generate visual assets: a JARVIS arc-reactor style logo/icon, a holographic HUD background image for the main dashboard, and a flame-themed avatar placeholder for the Rengoku mentor card.",
+      "reqIds": [
+        "REQ-12"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-the-broken-voice-interaction-system-the-web-speech-api-speechrecognition-must-initialize-correctly-on-page-load-request-microphone-permission-automatically-and-begin-continuous-background-listening-without-requiring-any-user-click-or-touch-debug-and-resolve-any-errors-preventing-speech-recognition-from-starting-including-browser-compatibility-issues-permission-handling-failures-or-recognition-not-restarting-after-it-stops-the-assistant-must-be-fully-operational-hands-free-from-the-moment-the-dashboard-loads",
+      "title": "Fix the broken voice interaction system. The Web Speech API (SpeechRecognition) must initialize correctly on page load, request microphone permission automatically, and begin continuous background listening without requiring any user click or touch. Debug and resolve any errors preventing speech recognition from starting, including browser compatibility issues, permission handling failures, or recognition not restarting after it stops. The assistant must be fully operational hands-free from the moment the dashboard loads.",
+      "reqIds": [
+        "REQ-13"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-fully-autonomous-background-operation-mode-the-assistant-must-run-silently-and-continuously-in-the-background-listening-for-the-wake-word-processing-commands-and-executing-actions-open-urls-control-volume-brightness-scroll-search-wikipedia-respond-with-speech-all-without-any-touch-or-click-from-the-user-this-includes-1-auto-starting-the-wake-word-listener-on-app-load-2-automatically-restarting-recognition-after-each-interaction-or-timeout-3-executing-all-pc-control-commands-open-app-url-volume-brightness-scroll-purely-via-voice-without-needing-ui-button-clicks-and-4-ensuring-the-full-voice-command-loop-listen-process-respond-return-to-listening-cycles-automatically-with-no-manual-intervention-required-at-any-step",
+      "title": "Implement fully autonomous background operation mode. The assistant must run silently and continuously in the background — listening for the wake word, processing commands, and executing actions (open URLs, control volume/brightness, scroll, search Wikipedia, respond with speech) — all without any touch or click from the user. This includes: (1) auto-starting the wake word listener on app load, (2) automatically restarting recognition after each interaction or timeout, (3) executing all PC control commands (open app/URL, volume, brightness, scroll) purely via voice without needing UI button clicks, and (4) ensuring the full voice command loop (listen → process → respond → return to listening) cycles automatically with no manual intervention required at any step.",
+      "reqIds": [
+        "REQ-14"
+      ],
+      "version": 1
+    }
+  ],
+  "new_feature_requests": [
+    {
+      "id": "AR-1",
+      "summary": "Voice-to-voice AI assistant interaction (speak and listen like JARVIS)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Per-user persistent memory stored by email (like ChatGPT memory), survives app close",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Email/password registration and login page with eye icon password toggle, high-end animations and effects",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-4",
+      "summary": "Post-login animated screen transition with time-based greeting (morning/afternoon/evening)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-5",
+      "summary": "Main page with professional-level JARVIS-style animations, graphics, and effects",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-6",
+      "summary": "Multilingual support — change language via voice command; supports any world language",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-7",
+      "summary": "Personal vs Professional language mode — personal uses natural human-style speech (e.g., Telugu), switches to professional on voice command",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-8",
+      "summary": "Customizable anime/movie mentor character (default: Rengoku Kojiro from Demon Slayer) for scheduling and motivation",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-9",
+      "summary": "PC control features: volume up/down, scroll up/down, brightness up/down, open apps, Wikipedia/web info lookup",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-10",
+      "summary": "Background operation — assistant stays active and interactable when app is minimized",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-11",
+      "summary": "Customizable wake word (default: 'Jarvis') to activate the assistant hands-free",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-12",
+      "summary": "Fix voice interaction — currently not working; must be fully functional with no manual triggering required",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-13",
+      "summary": "Fully autonomous background operation — app runs silently, listens hands-free, opens apps, executes any command automatically without any touch or click from the user",
+      "reqIds": [],
+      "status": "pending"
+    }
+  ],
+  "gameProjectType": "none",
+  "projectName": "JARVIS AI Assistant",
+  "clarification_mode": "instant",
+  "clarification_rounds": 0
+}
