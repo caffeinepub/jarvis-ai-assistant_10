@@ -1,157 +1,151 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useGetCallerUserProfile } from '../hooks/useQueries';
-import { getTimeGreeting, getTimeEmoji } from '../utils/timeGreeting';
-import HUDRings from '../components/HUDRings';
 
-const TransitionScreen: React.FC = () => {
-    const navigate = useNavigate();
-    const { data: profile } = useGetCallerUserProfile();
-    const [phase, setPhase] = useState<'boot' | 'greeting' | 'done'>('boot');
-    const [displayText, setDisplayText] = useState('');
-    const [showGreeting, setShowGreeting] = useState(false);
+const BOOT_LINES = [
+  'INITIALIZING JARVIS CORE SYSTEMS...',
+  'LOADING NEURAL INTERFACE...',
+  'CALIBRATING VOICE RECOGNITION...',
+  'ESTABLISHING SECURE CONNECTION...',
+  'SYNCING USER PROFILE...',
+  'ALL SYSTEMS NOMINAL.',
+];
 
-    const greeting = getTimeGreeting();
-    const emoji = getTimeEmoji();
-    const username = profile?.username || 'User';
+function getTimeGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good Morning';
+  if (hour < 17) return 'Good Afternoon';
+  return 'Good Evening';
+}
 
-    useEffect(() => {
-        const bootLines = [
-            'INITIALIZING JARVIS SYSTEMS...',
-            'LOADING NEURAL NETWORKS...',
-            'CALIBRATING VOICE MODULES...',
-            'SYNCING MEMORY BANKS...',
-            'ALL SYSTEMS NOMINAL.',
-        ];
+export default function TransitionScreen() {
+  const navigate = useNavigate();
+  const { data: userProfile } = useGetCallerUserProfile();
+  const [displayedLines, setDisplayedLines] = useState<string[]>([]);
+  const [currentLine, setCurrentLine] = useState(0);
+  const [currentChar, setCurrentChar] = useState(0);
+  const [done, setDone] = useState(false);
+  const greetingSpokenRef = useRef(false);
 
-        let lineIdx = 0;
-        let charIdx = 0;
-        let currentText = '';
+  // Typewriter effect
+  useEffect(() => {
+    if (currentLine >= BOOT_LINES.length) {
+      setDone(true);
+      return;
+    }
+    const line = BOOT_LINES[currentLine];
+    if (currentChar < line.length) {
+      const t = setTimeout(() => setCurrentChar(c => c + 1), 28);
+      return () => clearTimeout(t);
+    } else {
+      const t = setTimeout(() => {
+        setDisplayedLines(prev => [...prev, line]);
+        setCurrentLine(l => l + 1);
+        setCurrentChar(0);
+      }, 180);
+      return () => clearTimeout(t);
+    }
+  }, [currentLine, currentChar]);
 
-        const typeInterval = setInterval(() => {
-            if (lineIdx >= bootLines.length) {
-                clearInterval(typeInterval);
-                setPhase('greeting');
-                setTimeout(() => setShowGreeting(true), 300);
-                setTimeout(() => {
-                    navigate({ to: '/dashboard' });
-                }, 3500);
-                return;
-            }
+  // Speak greeting and navigate after boot sequence
+  useEffect(() => {
+    if (!done) return;
+    if (greetingSpokenRef.current) return;
+    greetingSpokenRef.current = true;
 
-            const line = bootLines[lineIdx];
-            if (charIdx < line.length) {
-                currentText += line[charIdx];
-                charIdx++;
-                setDisplayText(currentText);
-            } else {
-                currentText += '\n';
-                setDisplayText(currentText);
-                lineIdx++;
-                charIdx = 0;
-            }
-        }, 30);
+    const username = userProfile?.username || 'Master';
+    const timeGreeting = getTimeGreeting();
+    const greetingText = `${timeGreeting}. Welcome back, Master ${username}. All systems are online and ready.`;
 
-        return () => clearInterval(typeInterval);
-    }, [navigate]);
+    // Speak the greeting
+    const speakGreeting = () => {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(greetingText);
+        utterance.rate = 0.9;
+        utterance.pitch = 0.8;
+        utterance.volume = 1;
+        // Try to find a deep/male voice
+        const voices = window.speechSynthesis.getVoices();
+        const preferredVoice = voices.find(v =>
+          v.name.toLowerCase().includes('male') ||
+          v.name.toLowerCase().includes('david') ||
+          v.name.toLowerCase().includes('daniel') ||
+          v.name.toLowerCase().includes('alex')
+        );
+        if (preferredVoice) utterance.voice = preferredVoice;
+        window.speechSynthesis.speak(utterance);
+      }
+    };
 
-    return (
-        <div
-            className="fixed inset-0 flex flex-col items-center justify-center overflow-hidden"
-            style={{ background: 'oklch(0.06 0.01 220)' }}
-        >
-            {/* Background glow */}
-            <div
-                className="absolute inset-0"
-                style={{
-                    background: 'radial-gradient(ellipse at center, rgba(0,229,255,0.08) 0%, transparent 70%)',
-                }}
-            />
+    // Voices may not be loaded yet
+    if (window.speechSynthesis.getVoices().length > 0) {
+      speakGreeting();
+    } else {
+      window.speechSynthesis.onvoiceschanged = () => {
+        speakGreeting();
+        window.speechSynthesis.onvoiceschanged = null;
+      };
+      // Fallback if onvoiceschanged never fires
+      setTimeout(speakGreeting, 500);
+    }
 
-            {/* HUD Rings */}
-            <div className="absolute inset-0 flex items-center justify-center opacity-30">
-                <HUDRings size={600} isActive state="processing" />
-            </div>
+    const navTimer = setTimeout(() => {
+      navigate({ to: '/dashboard' });
+    }, 3200);
 
-            {/* Scanlines */}
-            <div
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                    backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,229,255,0.02) 2px, rgba(0,229,255,0.02) 4px)',
-                }}
-            />
+    return () => clearTimeout(navTimer);
+  }, [done, userProfile, navigate]);
 
-            {/* Content */}
-            <div className="relative z-10 text-center space-y-8 px-8 max-w-2xl w-full">
-                {/* Arc reactor logo */}
-                <div className="flex justify-center">
-                    <div className="relative">
-                        <img
-                            src="/assets/generated/arc-reactor-logo.dim_256x256.png"
-                            alt="JARVIS"
-                            className="w-24 h-24"
-                            style={{
-                                filter: 'drop-shadow(0 0 30px rgba(0,229,255,1))',
-                                animation: 'pulse-cyan 1.5s ease-in-out infinite',
-                            }}
-                        />
-                        <div
-                            className="absolute inset-0 rounded-full"
-                            style={{
-                                background: 'radial-gradient(circle, rgba(0,229,255,0.3) 0%, transparent 70%)',
-                                animation: 'pulse-cyan 1.5s ease-in-out infinite',
-                            }}
-                        />
-                    </div>
-                </div>
+  const username = userProfile?.username || 'User';
+  const timeGreeting = getTimeGreeting();
 
-                {/* Boot text */}
-                {phase === 'boot' && (
-                    <div
-                        className="text-left font-mono-tech text-sm leading-relaxed"
-                        style={{ color: 'oklch(0.78 0.18 195)' }}
-                    >
-                        <pre className="whitespace-pre-wrap">
-                            {displayText}
-                            <span className="animate-typing-cursor">█</span>
-                        </pre>
-                    </div>
-                )}
+  return (
+    <div className="min-h-screen bg-jarvis-bg flex flex-col items-center justify-center relative overflow-hidden">
+      {/* HUD rings */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div className="w-96 h-96 rounded-full border border-jarvis-cyan/10 animate-spin" style={{ animationDuration: '20s' }} />
+        <div className="absolute w-72 h-72 rounded-full border border-jarvis-cyan/15 animate-spin" style={{ animationDuration: '15s', animationDirection: 'reverse' }} />
+        <div className="absolute w-48 h-48 rounded-full border border-jarvis-cyan/20 animate-spin" style={{ animationDuration: '10s' }} />
+      </div>
 
-                {/* Greeting */}
-                {showGreeting && (
-                    <div className="space-y-4 animate-power-up">
-                        <div className="text-5xl">{emoji}</div>
-                        <h1
-                            className="font-orbitron text-4xl font-bold tracking-widest"
-                            style={{
-                                color: 'oklch(0.88 0.22 195)',
-                                textShadow: '0 0 20px rgba(0,229,255,0.8), 0 0 40px rgba(0,229,255,0.4)',
-                            }}
-                        >
-                            {greeting}
-                        </h1>
-                        <p
-                            className="font-rajdhani text-2xl tracking-widest"
-                            style={{ color: 'oklch(0.72 0.16 65)' }}
-                        >
-                            {username.toUpperCase()}
-                        </p>
-                        <p className="font-rajdhani text-muted-foreground tracking-wider">
-                            JARVIS is ready. All systems online.
-                        </p>
-                    </div>
-                )}
-            </div>
-
-            {/* Bottom status bar */}
-            <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-8 text-[10px] font-mono-tech text-muted-foreground opacity-50">
-                <span>NEURAL.NET: ONLINE</span>
-                <span>VOICE.SYS: READY</span>
-                <span>MEMORY.BANK: LOADED</span>
-            </div>
+      {/* Arc reactor logo */}
+      <div className="relative mb-8 z-10">
+        <div className="w-24 h-24 rounded-full border-2 border-jarvis-cyan flex items-center justify-center shadow-[0_0_40px_rgba(0,229,255,0.5)]">
+          <div className="w-16 h-16 rounded-full border border-jarvis-cyan/60 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full bg-jarvis-cyan/20 border border-jarvis-cyan animate-pulse" />
+          </div>
         </div>
-    );
-};
+      </div>
 
-export default TransitionScreen;
+      {/* Boot text */}
+      <div className="z-10 font-mono text-sm w-full max-w-lg px-8 mb-8">
+        {displayedLines.map((line, i) => (
+          <div key={i} className="text-jarvis-cyan/70 mb-1">
+            <span className="text-jarvis-cyan/40 mr-2">&gt;</span>{line}
+          </div>
+        ))}
+        {currentLine < BOOT_LINES.length && (
+          <div className="text-jarvis-cyan mb-1">
+            <span className="text-jarvis-cyan/40 mr-2">&gt;</span>
+            {BOOT_LINES[currentLine].slice(0, currentChar)}
+            <span className="animate-pulse">█</span>
+          </div>
+        )}
+      </div>
+
+      {/* Greeting */}
+      {done && (
+        <div className="z-10 text-center animate-fade-in">
+          <p className="text-jarvis-cyan/60 text-sm font-mono mb-1">{timeGreeting}</p>
+          <h1 className="text-3xl font-bold text-jarvis-cyan tracking-widest">
+            WELCOME BACK, MASTER {username.toUpperCase()}
+          </h1>
+          <p className="text-jarvis-cyan/50 text-xs font-mono mt-2 animate-pulse">
+            INITIALIZING DASHBOARD...
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}

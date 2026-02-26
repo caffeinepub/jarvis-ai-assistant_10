@@ -1,15 +1,20 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 5,
-  "summary": "A desktop AI assistant app inspired by Iron Man's JARVIS with voice-to-voice interaction, multi-user memory (per email like ChatGPT), animated login/registration, multilingual voice commands, personal/professional language modes, customizable anime/movie mentor characters, PC control features (volume, brightness, scroll, app launch), fully automatic background operation with hands-free control (no touch/click required), wake word activation, and Jarvis-level animations and graphics.",
+  "projectStateVersion": 7,
+  "summary": "A desktop AI assistant app inspired by Iron Man's JARVIS with voice-to-voice interaction, multi-user memory (per email like ChatGPT), animated login/registration, multilingual voice commands, personal/professional language modes, customizable anime/movie mentor characters, PC control features (volume, brightness, scroll, app launch), fully automatic background operation with hands-free control (no touch/click required), wake word activation, and Jarvis-level animations and graphics. Critical issues: welcome greeting must use voice audio (not just text), voice assistant must accurately execute actions (e.g., open YouTube) not just repeat commands, mentor characters must speak in authentic movie character style (Rengoku speaks like in Demon Slayer), and ALL PC controls must affect the actual OS/PC (not just simulate within the app UI).",
   "architectural_notes": [
     "Desktop app (not mobile) — likely Electron or Python (Tkinter/PyQt) based",
     "Multi-user architecture: all memory and preferences keyed by login email",
     "PC control requires OS-level APIs (e.g., pyautogui, pycaw, screen_brightness_control on Python)",
-    "Fully hands-free operation required — no UI interaction needed; all commands triggered by voice only"
+    "Fully hands-free operation required — no UI interaction needed; all commands triggered by voice only",
+    "PC control (volume, brightness, app launch) must use OS-level APIs — web/browser simulation is not acceptable; requires Electron IPC or Python backend"
   ],
   "known_issues": [
-    "Voice interaction is not working in the current build"
+    "Voice interaction is not working in the current build",
+    "Post-login welcome is shown as text only — must be spoken via voice/audio",
+    "Voice assistant repeats command text but does not execute actions (e.g., open YouTube does not actually open YouTube)",
+    "Mentor characters do not speak in authentic character style (Rengoku does not sound like Rengoku)",
+    "PC controls (volume, brightness, etc.) only affect the app UI — do not control the actual OS/PC"
   ],
   "isFixRequest": true,
   "existing_features": [
@@ -124,6 +129,38 @@
         "REQ-14"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-on-successful-login-after-the-transition-screen-completes-the-assistant-must-greet-the-user-with-synthesized-speech-using-speechsynthesis-api-the-spoken-greeting-must-say-welcome-back-master-username-e-g-welcome-back-master-rockyroy-using-the-time-based-prefix-good-morning-afternoon-evening-this-audio-greeting-must-play-automatically-without-any-user-interaction-the-text-display-alone-is-not-sufficient",
+      "title": "On successful login, after the transition screen completes, the assistant must greet the user with synthesized speech using SpeechSynthesis API. The spoken greeting must say 'Welcome back, Master [username]' (e.g., 'Welcome back, Master RockyRoy') using the time-based prefix (Good Morning/Afternoon/Evening). This audio greeting must play automatically without any user interaction — the text display alone is not sufficient.",
+      "reqIds": [
+        "REQ-15"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-the-voice-assistant-command-processing-engine-in-usevoiceassistant-ts-currently-the-assistant-echoes-back-the-user-s-speech-verbatim-instead-of-parsing-and-executing-the-intended-command-the-command-parser-must-correctly-identify-intents-such-as-open-youtube-open-url-app-name-volume-up-down-brightness-up-down-scroll-up-down-search-wikipedia-for-topic-and-execute-the-corresponding-action-for-open-youtube-it-must-call-window-open-https-www-youtube-com-blank-immediately-the-assistant-must-not-respond-with-got-it-you-said-it-must-execute-the-action-and-confirm-it-with-a-contextual-spoken-response-e-g-opening-youtube-now-sir",
+      "title": "Fix the voice assistant command processing engine in useVoiceAssistant.ts. Currently the assistant echoes back the user's speech verbatim instead of parsing and executing the intended command. The command parser must correctly identify intents such as 'open YouTube', 'open [URL/app name]', 'volume up/down', 'brightness up/down', 'scroll up/down', 'search Wikipedia for [topic]', and execute the corresponding action. For 'open YouTube', it must call window.open('https://www.youtube.com', '_blank') immediately. The assistant must NOT respond with 'Got it! You said: ...' — it must execute the action and confirm it with a contextual spoken response (e.g., 'Opening YouTube now, sir.').",
+      "reqIds": [
+        "REQ-16"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-rewrite-the-mentor-character-dialogue-system-in-mentormessages-ts-and-mentorcard-tsx-so-that-each-mentor-speaks-in-their-authentic-movie-anime-character-voice-and-style-for-rengoku-kojiro-specifically-all-messages-motivational-quotes-reminders-and-spoken-responses-must-use-his-actual-catchphrases-and-speech-patterns-from-demon-slayer-e-g-set-your-heart-ablaze-umai-umai-umai-my-fire-burns-brighter-than-anyone-addressing-the-user-as-a-fellow-hashira-candidate-when-the-mentor-speaks-via-speechsynthesis-the-spoken-text-must-be-in-rengoku-s-authentic-dialogue-style-not-generic-ai-assistant-responses-extend-the-same-authentic-style-dialogue-for-other-preset-mentors-naruto-tony-stark-etc",
+      "title": "Rewrite the mentor character dialogue system in mentorMessages.ts and MentorCard.tsx so that each mentor speaks in their authentic movie/anime character voice and style. For Rengoku Kojiro specifically, all messages, motivational quotes, reminders, and spoken responses must use his actual catchphrases and speech patterns from Demon Slayer (e.g., 'SET YOUR HEART ABLAZE!', 'Umai! Umai! Umai!', 'My fire burns brighter than anyone!', addressing the user as a fellow Hashira candidate). When the mentor speaks via SpeechSynthesis, the spoken text must be in Rengoku's authentic dialogue style — not generic AI assistant responses. Extend the same authentic-style dialogue for other preset mentors (Naruto, Tony Stark, etc.).",
+      "reqIds": [
+        "REQ-17"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-real-os-level-pc-control-for-volume-and-brightness-via-web-platform-apis-and-progressive-enhancement-for-volume-control-use-the-web-audio-api-s-gainnode-on-a-persistent-audiocontext-to-control-system-audio-output-level-when-possible-and-additionally-attempt-the-media-session-api-for-brightness-use-the-screen-brightness-api-window-screen-brightness-where-supported-chrome-on-android-desktop-falling-back-to-the-css-filter-overlay-only-as-a-last-resort-but-clearly-labeled-as-display-overlay-only-for-opening-apps-urls-use-window-open-with-blank-target-which-actually-opens-in-the-os-default-browser-clearly-indicate-in-the-ui-which-controls-are-operating-at-os-level-vs-app-simulation-level-remove-any-false-indicators-that-suggest-os-level-control-when-only-app-level-simulation-is-occurring",
+      "title": "Implement real OS-level PC control for volume and brightness via web platform APIs and progressive enhancement. For volume control: use the Web Audio API's GainNode on a persistent AudioContext to control system audio output level when possible, and additionally attempt the Media Session API. For brightness: use the Screen Brightness API (window.screen.brightness) where supported (Chrome on Android/desktop), falling back to the CSS filter overlay only as a last resort but clearly labeled as 'display overlay only'. For opening apps/URLs: use window.open() with '_blank' target which actually opens in the OS default browser. Clearly indicate in the UI which controls are operating at OS level vs. app-simulation level. Remove any false indicators that suggest OS-level control when only app-level simulation is occurring.",
+      "reqIds": [
+        "REQ-18"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -202,6 +239,30 @@
     {
       "id": "AR-13",
       "summary": "Fully autonomous background operation — app runs silently, listens hands-free, opens apps, executes any command automatically without any touch or click from the user",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-14",
+      "summary": "Post-login welcome greeting must be spoken aloud via voice (e.g., 'Welcome back, Master RockyRoy') not just shown as text",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-15",
+      "summary": "Voice assistant must accurately execute actions (e.g., actually open YouTube) not just repeat/display the command text",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-16",
+      "summary": "Mentor characters (especially Rengoku) must speak in authentic movie/anime character style and dialogue — not generic AI responses",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-17",
+      "summary": "PC controls (volume, brightness, etc.) must affect the actual OS/PC system — not just simulate changes within the app UI",
       "reqIds": [],
       "status": "pending"
     }

@@ -1,67 +1,103 @@
 {
   "kind": "build_request",
-  "title": "Fix voice interaction and implement fully autonomous hands-free background operation",
+  "title": "Fix voice greeting, command execution, mentor character speech, and PC control system",
   "projectName": "JARVIS Assistant",
   "priority": "high",
   "requirements": [
     {
-      "id": "REQ-13",
-      "text": "Fix the broken voice interaction system. The Web Speech API (SpeechRecognition) must initialize correctly on page load, request microphone permission automatically, and begin continuous background listening without requiring any user click or touch. Debug and resolve any errors preventing speech recognition from starting, including browser compatibility issues, permission handling failures, or recognition not restarting after it stops. The assistant must be fully operational hands-free from the moment the dashboard loads.",
+      "id": "REQ-15",
+      "text": "On successful login, after the transition screen completes, the assistant must greet the user with synthesized speech using SpeechSynthesis API. The spoken greeting must say 'Welcome back, Master [username]' (e.g., 'Welcome back, Master RockyRoy') using the time-based prefix (Good Morning/Afternoon/Evening). This audio greeting must play automatically without any user interaction — the text display alone is not sufficient.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-latest"
         ],
         "quotes": [
-          "voice is not working"
+          "after login it show welcome text no audio it have to great with voice welcome back master rockyroy"
         ]
       },
       "acceptanceCriteria": [
-        "Microphone permission is requested automatically on dashboard load without any user interaction",
-        "SpeechRecognition starts in continuous mode immediately after permission is granted",
-        "The assistant detects the wake word ('Jarvis' by default) without any button press",
-        "After wake word detection, the assistant enters full listening mode and processes the command",
-        "The assistant responds with synthesized speech (SpeechSynthesis) without any manual trigger",
-        "If recognition stops or errors out, it automatically restarts within 1 second",
-        "Console shows no uncaught errors related to speech recognition initialization",
-        "The WaveformVisualizer and StatusIndicator reflect the correct listening/processing/speaking states in real time"
+        "After transition screen, SpeechSynthesis speaks 'Good [Morning/Afternoon/Evening], Welcome back, Master [username]' automatically",
+        "No user click or interaction is needed to trigger the voice greeting",
+        "The greeting uses the correct time-of-day prefix based on current hour",
+        "The username used is the logged-in user's name from their profile"
       ]
     },
     {
-      "id": "REQ-14",
-      "text": "Implement fully autonomous background operation mode. The assistant must run silently and continuously in the background — listening for the wake word, processing commands, and executing actions (open URLs, control volume/brightness, scroll, search Wikipedia, respond with speech) — all without any touch or click from the user. This includes: (1) auto-starting the wake word listener on app load, (2) automatically restarting recognition after each interaction or timeout, (3) executing all PC control commands (open app/URL, volume, brightness, scroll) purely via voice without needing UI button clicks, and (4) ensuring the full voice command loop (listen → process → respond → return to listening) cycles automatically with no manual intervention required at any step.",
+      "id": "REQ-16",
+      "text": "Fix the voice assistant command processing engine in useVoiceAssistant.ts. Currently the assistant echoes back the user's speech verbatim instead of parsing and executing the intended command. The command parser must correctly identify intents such as 'open YouTube', 'open [URL/app name]', 'volume up/down', 'brightness up/down', 'scroll up/down', 'search Wikipedia for [topic]', and execute the corresponding action. For 'open YouTube', it must call window.open('https://www.youtube.com', '_blank') immediately. The assistant must NOT respond with 'Got it! You said: ...' — it must execute the action and confirm it with a contextual spoken response (e.g., 'Opening YouTube now, sir.').",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-latest"
         ],
         "quotes": [
-          "i want like app which run in background fully automatic open any open do anything without touchuning"
+          "voice assistant not accurate",
+          "i told open youtube it just that sentence not done it",
+          "repaet the same text not doing the action"
         ]
       },
       "acceptanceCriteria": [
-        "On dashboard load, wake word listening begins automatically with no user interaction",
-        "After speaking a command and receiving a response, the assistant automatically returns to wake word listening mode",
-        "Voice commands alone (no UI clicks) can trigger: open URL, volume up/down, brightness up/down, scroll up/down, Wikipedia search",
-        "The recognition loop never permanently stops — it restarts automatically after errors, end events, or timeouts",
-        "The full voice interaction cycle (wake word → command → response → back to listening) completes end-to-end without any touch input",
-        "Status indicator always shows the current state (wake-listening, listening, processing, speaking) updating in real time",
-        "The app functions correctly even when the browser window is not in focus, to the extent permitted by browser APIs"
+        "Saying 'open YouTube' (in any language, including Telugu transliteration) causes window.open('https://www.youtube.com', '_blank') to be called",
+        "Saying 'open [website name]' opens the corresponding URL in a new tab",
+        "The assistant never responds with 'Got it! You said: [transcript]' as a fallback — it must parse and act on the command",
+        "After executing an action, the assistant speaks a contextual confirmation (e.g., 'Opening YouTube now, sir.')",
+        "Command parsing handles Telugu-script wake word + command combinations (e.g., 'జార్విస్ ఓపెన్ youtube' correctly maps to open YouTube)",
+        "The command loop returns to wake-word listening after each action automatically"
+      ]
+    },
+    {
+      "id": "REQ-17",
+      "text": "Rewrite the mentor character dialogue system in mentorMessages.ts and MentorCard.tsx so that each mentor speaks in their authentic movie/anime character voice and style. For Rengoku Kojiro specifically, all messages, motivational quotes, reminders, and spoken responses must use his actual catchphrases and speech patterns from Demon Slayer (e.g., 'SET YOUR HEART ABLAZE!', 'Umai! Umai! Umai!', 'My fire burns brighter than anyone!', addressing the user as a fellow Hashira candidate). When the mentor speaks via SpeechSynthesis, the spoken text must be in Rengoku's authentic dialogue style — not generic AI assistant responses. Extend the same authentic-style dialogue for other preset mentors (Naruto, Tony Stark, etc.).",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-latest"
+        ],
+        "quotes": [
+          "3 charcter mentor have to talk like real movie charcter rengoku should speak in the real"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Rengoku's motivational messages use his actual Demon Slayer catchphrases and speech style",
+        "Rengoku never says generic phrases like 'I'm here to help' — all dialogue is in-character",
+        "When the mentor card triggers a spoken message, SpeechSynthesis speaks it in Rengoku's authentic style",
+        "Other preset mentors (Naruto, Tony Stark) also have in-character authentic dialogue sets",
+        "The mentor's spoken responses during scheduling reminders and daily tips are fully in-character"
+      ]
+    },
+    {
+      "id": "REQ-18",
+      "text": "Implement real OS-level PC control for volume and brightness via web platform APIs and progressive enhancement. For volume control: use the Web Audio API's GainNode on a persistent AudioContext to control system audio output level when possible, and additionally attempt the Media Session API. For brightness: use the Screen Brightness API (window.screen.brightness) where supported (Chrome on Android/desktop), falling back to the CSS filter overlay only as a last resort but clearly labeled as 'display overlay only'. For opening apps/URLs: use window.open() with '_blank' target which actually opens in the OS default browser. Clearly indicate in the UI which controls are operating at OS level vs. app-simulation level. Remove any false indicators that suggest OS-level control when only app-level simulation is occurring.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-latest"
+        ],
+        "quotes": [
+          "pc control are done within the app out of the is not happen if i say reduce volume it is reduce in the app not pc same as all feature are working in the app not pc not happening"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Volume up/down voice command uses Web Audio API GainNode on a persistent AudioContext to affect actual audio output level",
+        "Brightness control attempts window.screen.brightness API first; falls back to CSS overlay only if unavailable",
+        "The UI labels each PC control indicating whether it is 'OS Level' or 'App Overlay' so the user is not misled",
+        "Opening YouTube or any URL via voice command calls window.open(url, '_blank') which opens in the real OS browser",
+        "Voice commands for volume/brightness/open execute the OS-level action without requiring any UI button click",
+        "PCControlsPanel.tsx and usePCControls.ts are updated to use the best available OS-level API for each control"
       ]
     }
   ],
   "constraints": [
-    "Do not modify files under frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, or frontend/src/components/ui",
-    "Use only the browser's native Web Speech API (SpeechRecognition and SpeechSynthesis) — no external voice/AI service integrations",
-    "All voice command processing and PC control logic must remain client-side in the frontend hooks",
-    "Backend schema and Motoko actor must not be changed unless strictly necessary for this fix"
+    "Do not modify files in frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, or frontend/src/components/ui",
+    "All voice greeting and command execution must remain browser-based (Web Speech API, SpeechSynthesis, window.open) — no native desktop app required",
+    "Maintain the existing JARVIS visual theme (dark #050a0f background, cyan #00e5ff accents, gold #ffa726 mentor accents)"
   ],
   "nonGoals": [
-    "Adding new voice commands or PC control features beyond what is already implemented",
-    "Changing the visual design or animations of the dashboard",
-    "Implementing push notifications or native OS background process APIs",
-    "Modifying user authentication, registration, or login flows",
-    "Adding new backend endpoints or data models"
+    "Installing or communicating with a native desktop agent or OS daemon",
+    "Modifying the backend Motoko actor for these fixes",
+    "Changing the authentication or user registration flow",
+    "Redesigning the dashboard layout or visual theme"
   ],
   "imageRequirements": {
     "required": [],

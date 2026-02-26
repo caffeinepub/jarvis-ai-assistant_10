@@ -41,7 +41,16 @@ const DashboardPage: React.FC = () => {
         onSaveEntry: handleSaveEntry,
         onLanguageChange: setCurrentLanguage,
         onModeChange: setCurrentMode,
-        pcControls,
+        pcControls: {
+            volumeUp: pcControls.volumeUp,
+            volumeDown: pcControls.volumeDown,
+            brightnessUp: pcControls.brightnessUp,
+            brightnessDown: pcControls.brightnessDown,
+            scrollUp: pcControls.scrollUp,
+            scrollDown: pcControls.scrollDown,
+            openUrl: pcControls.openUrl,
+            searchWikipedia: pcControls.searchWikipedia,
+        },
     });
 
     const handleVoiceToggle = () => {
@@ -90,7 +99,9 @@ const DashboardPage: React.FC = () => {
 
                 {/* Left column: PC Controls + Mentor */}
                 <div className="col-span-12 lg:col-span-3 flex flex-col gap-4">
-                    <PCControlsPanel controls={pcControls} />
+                    <ThemedPanel title="PC CONTROLS" className="overflow-auto">
+                        <PCControlsPanel />
+                    </ThemedPanel>
                     <MentorCard mentorName={profile.mentor || 'Rengoku Kojiro'} />
                 </div>
 
@@ -100,7 +111,11 @@ const DashboardPage: React.FC = () => {
                     <ThemedPanel className="flex flex-col items-center justify-center py-6 relative overflow-hidden" cornerBrackets>
                         {/* HUD rings background */}
                         <div className="absolute inset-0 flex items-center justify-center opacity-40">
-                            <HUDRings size={320} isActive={assistant.assistantState !== 'idle'} state={assistant.assistantState} />
+                            <HUDRings
+                                size={320}
+                                isActive={assistant.assistantState !== 'idle'}
+                                state={assistant.assistantState}
+                            />
                         </div>
 
                         {/* Arc reactor */}
@@ -192,7 +207,11 @@ const DashboardPage: React.FC = () => {
                     {/* System Status */}
                     <ThemedPanel title="SYSTEM STATUS" className="p-4 space-y-3">
                         <StatusRow label="VOICE ENGINE" value="ONLINE" color="green" />
-                        <StatusRow label="AUTO-LISTEN" value={assistant.isWakeWordActive ? 'ACTIVE' : 'STANDBY'} color={assistant.isWakeWordActive ? 'green' : 'cyan'} />
+                        <StatusRow
+                            label="AUTO-LISTEN"
+                            value={assistant.isWakeWordActive ? 'ACTIVE' : 'STANDBY'}
+                            color={assistant.isWakeWordActive ? 'green' : 'cyan'}
+                        />
                         <StatusRow label="MEMORY BANK" value={`${profile.conversationMemory.length} ENTRIES`} color="cyan" />
                         <StatusRow label="LANGUAGE" value={effectiveLanguage.toUpperCase()} color="cyan" />
                         <StatusRow label="MODE" value={effectiveMode.toUpperCase()} color={effectiveMode === 'professional' ? 'cyan' : 'gold'} />
@@ -209,10 +228,11 @@ const DashboardPage: React.FC = () => {
                                 '"Brightness up/down"',
                                 '"Scroll up/down"',
                                 '"Open YouTube"',
-                                '"What is [topic]"',
+                                '"Search [topic]"',
                                 '"Switch to Spanish"',
                                 '"Switch to professional"',
                                 '"Remember [note]"',
+                                '"What time is it?"',
                             ].map((cmd, i) => (
                                 <div key={i} className="flex items-center gap-2">
                                     <div className="w-1 h-1 rounded-full bg-jarvis-cyan/60 flex-shrink-0" />

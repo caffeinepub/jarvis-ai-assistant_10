@@ -2,12 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-fix-the-broken-voice-interaction-system-the-web-speech-api-speechrecognition-must-initialize-correctly-on-page-load-request-microphone-permission-automatically-and-begin-continuous-background-listening-without-requiring-any-user-click-or-touch-debug-and-resolve-any-errors-preventing-speech-recognition-from-starting-including-browser-compatibility-issues-permission-handling-failures-or-recognition-not-restarting-after-it-stops-the-assistant-must-be-fully-operational-hands-free-from-the-moment-the-dashboard-loads",
-      "featureTitle": "Fix the broken voice interaction system. The Web Speech API (SpeechRecognition) must initialize correctly on page load, request microphone permission automatically, and begin continuous background listening without requiring any user click or touch. Debug and resolve any errors preventing speech recognition from starting, including browser compatibility issues, permission handling failures, or recognition not restarting after it stops. The assistant must be fully operational hands-free from the moment the dashboard loads.",
+      "featureId": "feature-on-successful-login-after-the-transition-screen-completes-the-assistant-must-greet-the-user-with-synthesized-speech-using-speechsynthesis-api-the-spoken-greeting-must-say-welcome-back-master-username-e-g-welcome-back-master-rockyroy-using-the-time-based-prefix-good-morning-afternoon-evening-this-audio-greeting-must-play-automatically-without-any-user-interaction-the-text-display-alone-is-not-sufficient",
+      "featureTitle": "On successful login, after the transition screen completes, the assistant must greet the user with synthesized speech using SpeechSynthesis API. The spoken greeting must say 'Welcome back, Master [username]' (e.g., 'Welcome back, Master RockyRoy') using the time-based prefix (Good Morning/Afternoon/Evening). This audio greeting must play automatically without any user interaction — the text display alone is not sufficient.",
       "files": [
-        "frontend/src/hooks/useSpeechRecognition.ts",
-        "frontend/src/hooks/useVoiceAssistant.ts",
-        "frontend/src/pages/DashboardPage.tsx"
+        "frontend/src/pages/TransitionScreen.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -18,13 +16,13 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-13"
+        "REQ-15"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-implement-fully-autonomous-background-operation-mode-the-assistant-must-run-silently-and-continuously-in-the-background-listening-for-the-wake-word-processing-commands-and-executing-actions-open-urls-control-volume-brightness-scroll-search-wikipedia-respond-with-speech-all-without-any-touch-or-click-from-the-user-this-includes-1-auto-starting-the-wake-word-listener-on-app-load-2-automatically-restarting-recognition-after-each-interaction-or-timeout-3-executing-all-pc-control-commands-open-app-url-volume-brightness-scroll-purely-via-voice-without-needing-ui-button-clicks-and-4-ensuring-the-full-voice-command-loop-listen-process-respond-return-to-listening-cycles-automatically-with-no-manual-intervention-required-at-any-step",
-      "featureTitle": "Implement fully autonomous background operation mode. The assistant must run silently and continuously in the background — listening for the wake word, processing commands, and executing actions (open URLs, control volume/brightness, scroll, search Wikipedia, respond with speech) — all without any touch or click from the user. This includes: (1) auto-starting the wake word listener on app load, (2) automatically restarting recognition after each interaction or timeout, (3) executing all PC control commands (open app/URL, volume, brightness, scroll) purely via voice without needing UI button clicks, and (4) ensuring the full voice command loop (listen → process → respond → return to listening) cycles automatically with no manual intervention required at any step.",
+      "featureId": "feature-fix-the-voice-assistant-command-processing-engine-in-usevoiceassistant-ts-currently-the-assistant-echoes-back-the-user-s-speech-verbatim-instead-of-parsing-and-executing-the-intended-command-the-command-parser-must-correctly-identify-intents-such-as-open-youtube-open-url-app-name-volume-up-down-brightness-up-down-scroll-up-down-search-wikipedia-for-topic-and-execute-the-corresponding-action-for-open-youtube-it-must-call-window-open-https-www-youtube-com-blank-immediately-the-assistant-must-not-respond-with-got-it-you-said-it-must-execute-the-action-and-confirm-it-with-a-contextual-spoken-response-e-g-opening-youtube-now-sir",
+      "featureTitle": "Fix the voice assistant command processing engine in useVoiceAssistant.ts. Currently the assistant echoes back the user's speech verbatim instead of parsing and executing the intended command. The command parser must correctly identify intents such as 'open YouTube', 'open [URL/app name]', 'volume up/down', 'brightness up/down', 'scroll up/down', 'search Wikipedia for [topic]', and execute the corresponding action. For 'open YouTube', it must call window.open('https://www.youtube.com', '_blank') immediately. The assistant must NOT respond with 'Got it! You said: ...' — it must execute the action and confirm it with a contextual spoken response (e.g., 'Opening YouTube now, sir.').",
       "files": [
         "frontend/src/hooks/useVoiceAssistant.ts"
       ],
@@ -37,7 +35,48 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-14"
+        "REQ-16"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-rewrite-the-mentor-character-dialogue-system-in-mentormessages-ts-and-mentorcard-tsx-so-that-each-mentor-speaks-in-their-authentic-movie-anime-character-voice-and-style-for-rengoku-kojiro-specifically-all-messages-motivational-quotes-reminders-and-spoken-responses-must-use-his-actual-catchphrases-and-speech-patterns-from-demon-slayer-e-g-set-your-heart-ablaze-umai-umai-umai-my-fire-burns-brighter-than-anyone-addressing-the-user-as-a-fellow-hashira-candidate-when-the-mentor-speaks-via-speechsynthesis-the-spoken-text-must-be-in-rengoku-s-authentic-dialogue-style-not-generic-ai-assistant-responses-extend-the-same-authentic-style-dialogue-for-other-preset-mentors-naruto-tony-stark-etc",
+      "featureTitle": "Rewrite the mentor character dialogue system in mentorMessages.ts and MentorCard.tsx so that each mentor speaks in their authentic movie/anime character voice and style. For Rengoku Kojiro specifically, all messages, motivational quotes, reminders, and spoken responses must use his actual catchphrases and speech patterns from Demon Slayer (e.g., 'SET YOUR HEART ABLAZE!', 'Umai! Umai! Umai!', 'My fire burns brighter than anyone!', addressing the user as a fellow Hashira candidate). When the mentor speaks via SpeechSynthesis, the spoken text must be in Rengoku's authentic dialogue style — not generic AI assistant responses. Extend the same authentic-style dialogue for other preset mentors (Naruto, Tony Stark, etc.).",
+      "files": [
+        "frontend/src/components/MentorCard.tsx",
+        "frontend/src/utils/mentorMessages.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-17"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-implement-real-os-level-pc-control-for-volume-and-brightness-via-web-platform-apis-and-progressive-enhancement-for-volume-control-use-the-web-audio-api-s-gainnode-on-a-persistent-audiocontext-to-control-system-audio-output-level-when-possible-and-additionally-attempt-the-media-session-api-for-brightness-use-the-screen-brightness-api-window-screen-brightness-where-supported-chrome-on-android-desktop-falling-back-to-the-css-filter-overlay-only-as-a-last-resort-but-clearly-labeled-as-display-overlay-only-for-opening-apps-urls-use-window-open-with-blank-target-which-actually-opens-in-the-os-default-browser-clearly-indicate-in-the-ui-which-controls-are-operating-at-os-level-vs-app-simulation-level-remove-any-false-indicators-that-suggest-os-level-control-when-only-app-level-simulation-is-occurring",
+      "featureTitle": "Implement real OS-level PC control for volume and brightness via web platform APIs and progressive enhancement. For volume control: use the Web Audio API's GainNode on a persistent AudioContext to control system audio output level when possible, and additionally attempt the Media Session API. For brightness: use the Screen Brightness API (window.screen.brightness) where supported (Chrome on Android/desktop), falling back to the CSS filter overlay only as a last resort but clearly labeled as 'display overlay only'. For opening apps/URLs: use window.open() with '_blank' target which actually opens in the OS default browser. Clearly indicate in the UI which controls are operating at OS level vs. app-simulation level. Remove any false indicators that suggest OS-level control when only app-level simulation is occurring.",
+      "files": [
+        "frontend/src/components/PCControlsPanel.tsx",
+        "frontend/src/hooks/usePCControls.ts",
+        "frontend/src/hooks/useVoiceAssistant.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-18"
       ],
       "confidence": "high"
     }

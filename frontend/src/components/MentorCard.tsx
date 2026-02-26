@@ -1,98 +1,195 @@
-import React, { useState, useEffect } from 'react';
-import { Flame, RefreshCw } from 'lucide-react';
-import { getMentorMessage, getMentorStyle } from '../utils/mentorMessages';
-import ThemedPanel from './ThemedPanel';
+import { useState, useEffect, useCallback } from 'react';
+import { Volume2, RefreshCw, Flame, Zap, Star } from 'lucide-react';
+import { getMentorData, getRandomMessage, getRandomGreeting, getRandomChallenge, getDailyTip } from '../utils/mentorMessages';
 
 interface MentorCardProps {
-    mentorName: string;
+  mentorName: string;
 }
 
-const MentorCard: React.FC<MentorCardProps> = ({ mentorName }) => {
-    const [message, setMessage] = useState('');
-    const style = getMentorStyle(mentorName);
-    const isRengoku = mentorName.toLowerCase().includes('rengoku');
-    const isGold = style === 'flame' || style === 'power';
+export default function MentorCard({ mentorName }: MentorCardProps) {
+  const mentorData = getMentorData(mentorName);
+  const [currentMessage, setCurrentMessage] = useState(() => getDailyTip(mentorName));
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [mode, setMode] = useState<'tip' | 'greeting' | 'challenge'>('tip');
 
-    useEffect(() => {
-        setMessage(getMentorMessage(mentorName));
-    }, [mentorName]);
-
-    const refreshMessage = () => {
-        setMessage(getMentorMessage(mentorName));
-    };
-
-    return (
-        <ThemedPanel variant={isGold ? 'gold' : 'cyan'} title="MENTOR" className="h-full">
-            <div className="p-4 space-y-3">
-                <div className="flex items-center gap-3">
-                    {/* Avatar */}
-                    <div className="relative w-14 h-14 rounded-sm overflow-hidden flex-shrink-0">
-                        {isRengoku ? (
-                            <img
-                                src="/assets/generated/rengoku-avatar.dim_256x256.png"
-                                alt={mentorName}
-                                className="w-full h-full object-cover"
-                            />
-                        ) : (
-                            <div
-                                className="w-full h-full flex items-center justify-center"
-                                style={{
-                                    background: isGold
-                                        ? 'linear-gradient(135deg, rgba(255,167,38,0.3), rgba(255,87,34,0.2))'
-                                        : 'linear-gradient(135deg, rgba(0,229,255,0.3), rgba(0,150,180,0.2))',
-                                    border: `1px solid ${isGold ? 'rgba(255,167,38,0.4)' : 'rgba(0,229,255,0.4)'}`,
-                                }}
-                            >
-                                <Flame
-                                    className="w-7 h-7"
-                                    style={{ color: isGold ? 'oklch(0.85 0.18 65)' : 'oklch(0.88 0.22 195)' }}
-                                />
-                            </div>
-                        )}
-                        {/* Glow overlay */}
-                        <div
-                            className="absolute inset-0"
-                            style={{
-                                background: isGold
-                                    ? 'linear-gradient(to bottom, transparent 60%, rgba(255,167,38,0.3))'
-                                    : 'linear-gradient(to bottom, transparent 60%, rgba(0,229,255,0.3))',
-                            }}
-                        />
-                    </div>
-
-                    <div>
-                        <p className={`font-orbitron text-sm font-bold ${isGold ? 'text-gold-jarvis text-glow-gold' : 'text-cyan-jarvis text-glow-cyan'}`}>
-                            {mentorName.toUpperCase()}
-                        </p>
-                        <p className="text-xs text-muted-foreground font-rajdhani tracking-wider">
-                            {isRengoku ? 'FLAME HASHIRA' : 'PERSONAL MENTOR'}
-                        </p>
-                    </div>
-                </div>
-
-                {/* Message */}
-                <div
-                    className="p-3 rounded-sm text-sm font-rajdhani leading-relaxed"
-                    style={{
-                        background: isGold ? 'rgba(255,167,38,0.05)' : 'rgba(0,229,255,0.05)',
-                        borderLeft: `2px solid ${isGold ? 'rgba(255,167,38,0.5)' : 'rgba(0,229,255,0.5)'}`,
-                    }}
-                >
-                    <p className={isGold ? 'text-gold-jarvis' : 'text-cyan-jarvis'}>
-                        "{message}"
-                    </p>
-                </div>
-
-                <button
-                    onClick={refreshMessage}
-                    className={`flex items-center gap-1.5 text-xs font-orbitron tracking-wider uppercase transition-opacity hover:opacity-100 opacity-60 ${isGold ? 'text-gold-jarvis' : 'text-cyan-jarvis'}`}
-                >
-                    <RefreshCw className="w-3 h-3" />
-                    New Message
-                </button>
-            </div>
-        </ThemedPanel>
+  const speak = useCallback((text: string) => {
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.95;
+    utterance.pitch = 0.85;
+    utterance.volume = 1;
+    const voices = window.speechSynthesis.getVoices();
+    // Try to find a suitable voice
+    const preferredVoice = voices.find(v =>
+      v.name.toLowerCase().includes('male') ||
+      v.name.toLowerCase().includes('david') ||
+      v.name.toLowerCase().includes('daniel') ||
+      v.name.toLowerCase().includes('alex')
     );
-};
+    if (preferredVoice) utterance.voice = preferredVoice;
+    window.speechSynthesis.speak(utterance);
+  }, []);
 
-export default MentorCard;
+  // Auto-speak greeting on mount
+  useEffect(() => {
+    const greeting = getRandomGreeting(mentorName);
+    const timer = setTimeout(() => {
+      speak(greeting);
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [mentorName, speak]);
+
+  const refreshMessage = useCallback(() => {
+    setIsAnimating(true);
+    setTimeout(() => {
+      const msg = getRandomMessage(mentorName);
+      setCurrentMessage(msg);
+      setMode('tip');
+      setIsAnimating(false);
+      speak(msg.text);
+    }, 300);
+  }, [mentorName, speak]);
+
+  const showGreeting = useCallback(() => {
+    setIsAnimating(true);
+    setTimeout(() => {
+      const greeting = getRandomGreeting(mentorName);
+      setCurrentMessage({ text: greeting, category: 'greeting' });
+      setMode('greeting');
+      setIsAnimating(false);
+      speak(greeting);
+    }, 300);
+  }, [mentorName, speak]);
+
+  const showChallenge = useCallback(() => {
+    setIsAnimating(true);
+    setTimeout(() => {
+      const challenge = getRandomChallenge(mentorName);
+      setCurrentMessage({ text: challenge, category: 'challenge' });
+      setMode('challenge');
+      setIsAnimating(false);
+      speak(challenge);
+    }, 300);
+  }, [mentorName, speak]);
+
+  const speakCurrent = useCallback(() => {
+    speak(currentMessage.text);
+  }, [currentMessage, speak]);
+
+  const mentorColor = mentorData.color;
+  const isRengoku = mentorName.toLowerCase().includes('rengoku');
+  const isNaruto = mentorName.toLowerCase().includes('naruto');
+
+  return (
+    <div
+      className="rounded-lg border p-4 relative overflow-hidden"
+      style={{
+        background: `linear-gradient(135deg, rgba(5,10,15,0.95) 0%, rgba(5,10,15,0.85) 100%)`,
+        borderColor: `${mentorColor}40`,
+        boxShadow: `0 0 20px ${mentorColor}20`,
+      }}
+    >
+      {/* Background glow */}
+      <div
+        className="absolute inset-0 opacity-5 pointer-events-none"
+        style={{ background: `radial-gradient(circle at 50% 0%, ${mentorColor}, transparent 70%)` }}
+      />
+
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-3 relative z-10">
+        <div
+          className="w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold border-2"
+          style={{
+            borderColor: mentorColor,
+            background: `${mentorColor}20`,
+            color: mentorColor,
+            boxShadow: `0 0 12px ${mentorColor}40`,
+          }}
+        >
+          {isRengoku ? '🔥' : isNaruto ? '🍥' : '⚙️'}
+        </div>
+        <div>
+          <h3 className="font-bold text-sm" style={{ color: mentorColor }}>
+            {mentorData.name}
+          </h3>
+          <p className="text-xs text-gray-500">{mentorData.title}</p>
+        </div>
+        <div className="ml-auto flex gap-1">
+          <button
+            onClick={speakCurrent}
+            className="p-1.5 rounded transition-colors hover:bg-white/10"
+            style={{ color: mentorColor }}
+            title="Speak message"
+          >
+            <Volume2 size={14} />
+          </button>
+          <button
+            onClick={refreshMessage}
+            className="p-1.5 rounded transition-colors hover:bg-white/10"
+            style={{ color: mentorColor }}
+            title="New message"
+          >
+            <RefreshCw size={14} />
+          </button>
+        </div>
+      </div>
+
+      {/* Message */}
+      <div
+        className={`relative z-10 transition-opacity duration-300 ${isAnimating ? 'opacity-0' : 'opacity-100'}`}
+      >
+        <div
+          className="text-sm leading-relaxed font-medium mb-3 p-3 rounded"
+          style={{
+            color: mode === 'challenge' ? '#ffa726' : mode === 'greeting' ? mentorColor : '#e0e0e0',
+            background: `${mentorColor}08`,
+            borderLeft: `3px solid ${mentorColor}`,
+          }}
+        >
+          "{currentMessage.text}"
+        </div>
+      </div>
+
+      {/* Action buttons */}
+      <div className="flex gap-2 relative z-10">
+        <button
+          onClick={showGreeting}
+          className="flex-1 flex items-center justify-center gap-1 py-1.5 px-2 rounded text-xs font-medium transition-all hover:opacity-80"
+          style={{
+            background: `${mentorColor}15`,
+            color: mentorColor,
+            border: `1px solid ${mentorColor}30`,
+          }}
+        >
+          <Star size={11} />
+          Greet
+        </button>
+        <button
+          onClick={refreshMessage}
+          className="flex-1 flex items-center justify-center gap-1 py-1.5 px-2 rounded text-xs font-medium transition-all hover:opacity-80"
+          style={{
+            background: `${mentorColor}15`,
+            color: mentorColor,
+            border: `1px solid ${mentorColor}30`,
+          }}
+        >
+          <Flame size={11} />
+          Inspire
+        </button>
+        <button
+          onClick={showChallenge}
+          className="flex-1 flex items-center justify-center gap-1 py-1.5 px-2 rounded text-xs font-medium transition-all hover:opacity-80"
+          style={{
+            background: `${mentorColor}15`,
+            color: mentorColor,
+            border: `1px solid ${mentorColor}30`,
+          }}
+        >
+          <Zap size={11} />
+          Challenge
+        </button>
+      </div>
+    </div>
+  );
+}

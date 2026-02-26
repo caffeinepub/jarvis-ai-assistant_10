@@ -17,49 +17,64 @@ const ConversationLog: React.FC<ConversationLogProps> = ({ entries, interimTrans
 
     return (
         <ThemedPanel title="CONVERSATION LOG" className="h-full flex flex-col">
-            <ScrollArea className="flex-1 h-64">
-                <div className="p-3 space-y-3">
-                    {entries.length === 0 && (
-                        <div className="text-center py-8">
-                            <p className="text-muted-foreground font-rajdhani text-sm">
-                                Say <span className="text-cyan-jarvis font-semibold">"Jarvis"</span> to activate, or press the mic button
-                            </p>
+            <ScrollArea className="flex-1 px-3 pb-3">
+                {entries.length === 0 && !interimTranscript && (
+                    <div className="flex flex-col items-center justify-center py-12 text-center space-y-3">
+                        <div className="w-12 h-12 rounded-full border border-jarvis-cyan/20 flex items-center justify-center">
+                            <div className="w-4 h-4 rounded-full bg-jarvis-cyan/20 animate-pulse" />
                         </div>
-                    )}
+                        <p className="text-xs font-mono-tech text-muted-foreground">
+                            AWAITING VOICE INPUT...
+                        </p>
+                        <p className="text-[10px] text-muted-foreground/60 font-rajdhani">
+                            Say the wake word to begin
+                        </p>
+                    </div>
+                )}
+
+                <div className="space-y-3 pt-2">
                     {entries.map((entry) => (
                         <div
                             key={entry.id}
-                            className={`flex ${entry.role === 'user' ? 'justify-end' : 'justify-start'} animate-slide-in-up`}
+                            className={`flex flex-col ${entry.role === 'user' ? 'items-end' : 'items-start'}`}
                         >
+                            <div className="flex items-center gap-2 mb-1">
+                                <span className={`text-[10px] font-orbitron tracking-widest ${
+                                    entry.role === 'user' ? 'text-gold-jarvis' : 'text-cyan-jarvis'
+                                }`}>
+                                    {entry.role === 'user' ? 'YOU' : 'JARVIS'}
+                                </span>
+                                <span className="text-[9px] text-muted-foreground font-mono-tech">
+                                    {entry.timestamp.toLocaleTimeString()}
+                                </span>
+                            </div>
                             <div
-                                className={`max-w-[85%] px-3 py-2 rounded-sm text-sm font-rajdhani ${
+                                className={`max-w-[85%] px-3 py-2 rounded-sm text-xs font-rajdhani leading-relaxed ${
                                     entry.role === 'user'
-                                        ? 'bg-jarvis-cyan/10 border border-jarvis-cyan/30 text-cyan-jarvis'
-                                        : 'bg-jarvis-gold/10 border border-jarvis-gold/30 text-gold-jarvis'
+                                        ? 'bg-jarvis-gold/10 border border-jarvis-gold/30 text-gold-jarvis'
+                                        : 'bg-jarvis-cyan/5 border border-jarvis-cyan/20 text-cyan-jarvis'
                                 }`}
                             >
-                                <div className="flex items-center gap-2 mb-1">
-                                    <span className="text-xs font-orbitron opacity-60 tracking-wider">
-                                        {entry.role === 'user' ? 'YOU' : 'JARVIS'}
-                                    </span>
-                                    <span className="text-xs opacity-40">
-                                        {entry.timestamp.toLocaleTimeString()}
-                                    </span>
-                                </div>
-                                <p className="leading-relaxed">{entry.text}</p>
+                                {entry.text}
                             </div>
                         </div>
                     ))}
+
+                    {/* Interim transcript */}
                     {interimTranscript && (
-                        <div className="flex justify-end">
-                            <div className="max-w-[85%] px-3 py-2 rounded-sm text-sm font-rajdhani bg-jarvis-cyan/5 border border-jarvis-cyan/20 text-cyan-jarvis opacity-60">
-                                <span className="text-xs font-orbitron opacity-60 tracking-wider block mb-1">YOU</span>
-                                <p className="italic">{interimTranscript}<span className="animate-typing-cursor">|</span></p>
+                        <div className="flex flex-col items-end">
+                            <div className="flex items-center gap-2 mb-1">
+                                <span className="text-[10px] font-orbitron tracking-widest text-gold-jarvis/60">YOU</span>
+                                <span className="text-[9px] text-muted-foreground font-mono-tech">...</span>
+                            </div>
+                            <div className="max-w-[85%] px-3 py-2 rounded-sm text-xs font-rajdhani leading-relaxed bg-jarvis-gold/5 border border-jarvis-gold/20 text-gold-jarvis/60 italic">
+                                {interimTranscript}
                             </div>
                         </div>
                     )}
-                    <div ref={bottomRef} />
                 </div>
+
+                <div ref={bottomRef} />
             </ScrollArea>
         </ThemedPanel>
     );

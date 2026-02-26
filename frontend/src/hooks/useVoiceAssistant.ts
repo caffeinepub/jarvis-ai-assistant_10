@@ -1,529 +1,610 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
-import { useSpeechSynthesis } from './useSpeechSynthesis';
-import { getLanguageCode } from '../utils/languageMaps';
-import { detectLanguageFromCommand } from '../utils/languageMaps';
-import type {
-    ISpeechRecognition,
-    ISpeechRecognitionEvent,
-    ISpeechRecognitionErrorEvent,
-} from '../types/speechRecognition';
-// Side-effect import to ensure the global Window augmentation is applied
-import '../types/speechRecognition';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import type { ISpeechRecognition, ISpeechRecognitionEvent } from '../types/speechRecognition';
 
-export type AssistantState = 'idle' | 'listening' | 'processing' | 'speaking' | 'wake-listening';
+// Re-export AssistantState so existing components can import it
+export type AssistantState = 'idle' | 'wake-listening' | 'listening' | 'processing' | 'speaking';
 
 export interface ConversationEntry {
-    id: string;
-    role: 'user' | 'assistant';
-    text: string;
-    timestamp: Date;
+  id: string;
+  role: 'user' | 'jarvis';
+  text: string;
+  timestamp: Date;
 }
 
 interface UseVoiceAssistantOptions {
-    language: string;
-    mode: string;
-    wakeWord: string;
-    username: string;
-    conversationMemory: string[];
-    onSaveEntry?: (entry: string) => void;
-    onLanguageChange?: (lang: string) => void;
-    onModeChange?: (mode: string) => void;
-    pcControls?: {
-        volumeUp: () => void;
-        volumeDown: () => void;
-        brightnessUp: () => void;
-        brightnessDown: () => void;
-        scrollUp: () => void;
-        scrollDown: () => void;
-        openURL: (url: string) => void;
-        searchWikipedia: (query: string) => Promise<{ title: string; summary: string; url: string }>;
-    };
+  wakeWord?: string;
+  language?: string;
+  mode?: string;
+  username?: string;
+  conversationMemory?: string[];
+  onSaveEntry?: (entry: string) => void;
+  onLanguageChange?: (lang: string) => void;
+  onModeChange?: (mode: string) => void;
+  pcControls?: {
+    volumeUp: () => void;
+    volumeDown: () => void;
+    brightnessUp: () => void;
+    brightnessDown: () => void;
+    scrollUp: () => void;
+    scrollDown: () => void;
+    openUrl: (url: string) => void;
+    searchWikipedia: (query: string) => Promise<void>;
+  };
 }
 
-export function useVoiceAssistant(options: UseVoiceAssistantOptions) {
-    const {
-        language,
-        mode,
-        wakeWord,
-        username,
-        conversationMemory,
-        onSaveEntry,
-        onLanguageChange,
-        onModeChange,
-        pcControls,
-    } = options;
+// URL mapping for common apps/sites
+const URL_MAP: Record<string, string> = {
+  youtube: 'https://www.youtube.com',
+  google: 'https://www.google.com',
+  gmail: 'https://mail.google.com',
+  maps: 'https://maps.google.com',
+  'google maps': 'https://maps.google.com',
+  facebook: 'https://www.facebook.com',
+  twitter: 'https://www.twitter.com',
+  instagram: 'https://www.instagram.com',
+  linkedin: 'https://www.linkedin.com',
+  github: 'https://www.github.com',
+  netflix: 'https://www.netflix.com',
+  spotify: 'https://www.spotify.com',
+  amazon: 'https://www.amazon.com',
+  reddit: 'https://www.reddit.com',
+  wikipedia: 'https://www.wikipedia.org',
+  whatsapp: 'https://web.whatsapp.com',
+  telegram: 'https://web.telegram.org',
+  discord: 'https://discord.com',
+  twitch: 'https://www.twitch.tv',
+  stackoverflow: 'https://stackoverflow.com',
+  'stack overflow': 'https://stackoverflow.com',
+};
 
-    const [assistantState, setAssistantState] = useState<AssistantState>('idle');
-    const [conversationLog, setConversationLog] = useState<ConversationEntry[]>([]);
-    const [interimTranscript, setInterimTranscript] = useState('');
-    const [isSupported] = useState(() =>
-        typeof window !== 'undefined' &&
-        ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)
-    );
+// Telugu transliteration mappings for common words
+const TELUGU_COMMAND_MAP: Record<string, string> = {
+  'ఓపెన్': 'open',
+  'తెరవు': 'open',
+  'వాల్యూమ్': 'volume',
+  'వాల్యూమ్ అప్': 'volume up',
+  'వాల్యూమ్ డౌన్': 'volume down',
+  'బ్రైట్నెస్': 'brightness',
+  'స్క్రోల్': 'scroll',
+  'సెర్చ్': 'search',
+  'యూట్యూబ్': 'youtube',
+  'గూగుల్': 'google',
+  'జార్విస్': 'jarvis',
+};
 
-    const langCode = getLanguageCode(language);
-    const { speak, cancel: cancelSpeech, isSpeaking } = useSpeechSynthesis();
+function normalizeTranscript(text: string): string {
+  let normalized = text.toLowerCase().trim();
+  for (const [telugu, english] of Object.entries(TELUGU_COMMAND_MAP)) {
+    normalized = normalized.replace(new RegExp(telugu, 'g'), english);
+  }
+  return normalized;
+}
 
-    // Stable refs for mutable values used inside callbacks
-    const wakeWordRef = useRef(wakeWord);
-    const modeRef = useRef(mode);
-    const langCodeRef = useRef(langCode);
-    const usernameRef = useRef(username);
-    const pcControlsRef = useRef(pcControls);
-    const onSaveEntryRef = useRef(onSaveEntry);
-    const onLanguageChangeRef = useRef(onLanguageChange);
-    const onModeChangeRef = useRef(onModeChange);
+function stripWakeWord(text: string, wakeWord: string): string {
+  const ww = wakeWord.toLowerCase();
+  if (text.startsWith(ww)) return text.slice(ww.length).trim();
+  if (text.startsWith('jarvis')) return text.slice('jarvis'.length).trim();
+  return text;
+}
 
-    useEffect(() => { wakeWordRef.current = wakeWord; }, [wakeWord]);
-    useEffect(() => { modeRef.current = mode; }, [mode]);
-    useEffect(() => { langCodeRef.current = langCode; }, [langCode]);
-    useEffect(() => { usernameRef.current = username; }, [username]);
-    useEffect(() => { pcControlsRef.current = pcControls; }, [pcControls]);
-    useEffect(() => { onSaveEntryRef.current = onSaveEntry; }, [onSaveEntry]);
-    useEffect(() => { onLanguageChangeRef.current = onLanguageChange; }, [onLanguageChange]);
-    useEffect(() => { onModeChangeRef.current = onModeChange; }, [onModeChange]);
+export function useVoiceAssistant({
+  wakeWord = 'Jarvis',
+  language = 'en-US',
+  mode = 'personal',
+  username = 'User',
+  conversationMemory: _conversationMemory = [],
+  onSaveEntry,
+  onLanguageChange,
+  onModeChange,
+  pcControls,
+}: UseVoiceAssistantOptions = {}) {
+  const [assistantState, setAssistantState] = useState<AssistantState>('idle');
+  const [isListening, setIsListening] = useState(false);
+  const [isWakeWordActive, setIsWakeWordActive] = useState(true);
+  const [isAwake, setIsAwake] = useState(false);
+  const [transcript, setTranscript] = useState('');
+  const [interimTranscript, setInterimTranscript] = useState('');
+  const [conversationLog, setConversationLog] = useState<ConversationEntry[]>([]);
+  const [volume, setVolume] = useState(70);
+  const [brightness, setBrightness] = useState(100);
+  const [searchResult, setSearchResult] = useState<{
+    title: string;
+    summary: string;
+    url: string;
+    thumbnail?: string;
+  } | null>(null);
 
-    // Single recognition instance ref — we manage it manually for full control
-    const recognitionRef = useRef<ISpeechRecognition | null>(null);
-    const stateRef = useRef<AssistantState>('idle');
-    const processingRef = useRef(false);
-    const restartTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const isStartingRef = useRef(false);
-    const mountedRef = useRef(true);
+  const isSupported =
+    typeof window !== 'undefined' &&
+    ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
 
-    const setStateSync = useCallback((s: AssistantState) => {
-        stateRef.current = s;
-        if (mountedRef.current) setAssistantState(s);
-    }, []);
+  const recognitionRef = useRef<ISpeechRecognition | null>(null);
+  const isAwakeRef = useRef(false);
+  const isWakeWordActiveRef = useRef(true);
+  const restartTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const gainNodeRef = useRef<GainNode | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const mountedRef = useRef(true);
 
-    const clearTimer = useCallback(() => {
-        if (restartTimerRef.current) {
-            clearTimeout(restartTimerRef.current);
-            restartTimerRef.current = null;
-        }
-    }, []);
+  // Keep refs in sync
+  useEffect(() => { isWakeWordActiveRef.current = isWakeWordActive; }, [isWakeWordActive]);
 
-    const addToLog = useCallback((role: 'user' | 'assistant', text: string) => {
-        const entry: ConversationEntry = {
-            id: Date.now().toString() + Math.random(),
-            role,
-            text,
-            timestamp: new Date(),
-        };
-        if (mountedRef.current) {
-            setConversationLog(prev => [...prev.slice(-50), entry]);
-        }
-        return entry;
-    }, []);
-
-    const generateResponse = useCallback(async (userInput: string): Promise<string> => {
-        const lower = userInput.toLowerCase().trim();
-        const controls = pcControlsRef.current;
-
-        if (controls) {
-            if (lower.includes('volume up') || lower.includes('increase volume')) {
-                controls.volumeUp();
-                return "Volume increased, sir.";
-            }
-            if (lower.includes('volume down') || lower.includes('decrease volume') || lower.includes('lower volume')) {
-                controls.volumeDown();
-                return "Volume decreased, sir.";
-            }
-            if (lower.includes('brightness up') || lower.includes('increase brightness')) {
-                controls.brightnessUp();
-                return "Brightness increased, sir.";
-            }
-            if (lower.includes('brightness down') || lower.includes('decrease brightness') || lower.includes('lower brightness')) {
-                controls.brightnessDown();
-                return "Brightness decreased, sir.";
-            }
-            if (lower.includes('scroll up')) {
-                controls.scrollUp();
-                return "Scrolling up, sir.";
-            }
-            if (lower.includes('scroll down')) {
-                controls.scrollDown();
-                return "Scrolling down, sir.";
-            }
-            if (lower.includes('search for ') || lower.includes('tell me about ') || lower.includes('what is ') || lower.includes('who is ')) {
-                const query = lower
-                    .replace('search for ', '')
-                    .replace('tell me about ', '')
-                    .replace('what is ', '')
-                    .replace('who is ', '')
-                    .trim();
-                try {
-                    const result = await controls.searchWikipedia(query);
-                    return `Here's what I found about ${result.title}: ${result.summary.slice(0, 300)}...`;
-                } catch {
-                    return `I couldn't find information about "${query}" at this time, sir.`;
-                }
-            }
-            if (lower.includes('open ')) {
-                const appName = lower.replace('open ', '').trim();
-                controls.openURL(appName);
-                return `Opening ${appName} for you, sir.`;
-            }
-        }
-
-        // Language switching
-        const detectedLang = detectLanguageFromCommand(lower);
-        if ((lower.includes('switch to') || lower.includes('change to') || lower.includes('speak in')) && detectedLang) {
-            onLanguageChangeRef.current?.(detectedLang);
-            return `Switching to ${detectedLang} language, sir. Language systems updated.`;
-        }
-
-        // Mode switching
-        if (lower.includes('switch to professional') || lower.includes('professional mode')) {
-            onModeChangeRef.current?.('professional');
-            return "Switching to Professional mode. Formal protocols engaged, sir.";
-        }
-        if (lower.includes('switch to personal') || lower.includes('personal mode')) {
-            onModeChangeRef.current?.('personal');
-            return "Switching to Personal mode. Casual interaction protocols activated.";
-        }
-
-        // Greetings
-        if (lower.includes('hello') || lower.includes('hi') || lower.includes('hey')) {
-            const hour = new Date().getHours();
-            const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
-            return `${greeting}, ${usernameRef.current}. All systems are online and ready. How may I assist you today?`;
-        }
-
-        // Time
-        if (lower.includes('what time') || lower.includes('current time')) {
-            return `The current time is ${new Date().toLocaleTimeString()}, sir.`;
-        }
-
-        // Date
-        if (lower.includes('what date') || lower.includes("today's date") || lower.includes('what day')) {
-            return `Today is ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}, sir.`;
-        }
-
-        // Status
-        if (lower.includes('how are you') || lower.includes('status')) {
-            return `All systems operational, ${usernameRef.current}. Running at peak efficiency. How can I be of service?`;
-        }
-
-        // Memory
-        if (lower.includes('remember') || lower.includes("don't forget")) {
-            const memoryNote = userInput.replace(/remember|don't forget/gi, '').trim();
-            onSaveEntryRef.current?.(`User note: ${memoryNote}`);
-            return `Noted and saved to memory, sir. I'll remember that ${memoryNote}.`;
-        }
-
-        // Default
-        if (modeRef.current === 'professional') {
-            return `I understand your request regarding "${userInput}". I'm processing the information and will provide a comprehensive response. Please note that as a browser-based assistant, my capabilities are optimized for voice interaction, information retrieval, and system controls.`;
-        } else {
-            return `Got it! You said: "${userInput}". I'm here to help you with anything you need. Try asking me to search Wikipedia, control volume, brightness, or switch languages!`;
-        }
-    }, []);
-
-    // ── Core recognition engine ──────────────────────────────────────────────
-
-    const destroyRecognition = useCallback(() => {
-        if (recognitionRef.current) {
-            try { recognitionRef.current.abort(); } catch { /* ignore */ }
-            recognitionRef.current = null;
-        }
-        isStartingRef.current = false;
-    }, []);
-
-    /**
-     * Start wake-word listening mode.
-     * Creates a continuous recognition instance that listens for the wake word.
-     */
-    const startWakeWordMode = useCallback(() => {
-        if (!isSupported || !mountedRef.current) return;
-        if (isStartingRef.current) return;
-
-        clearTimer();
-        destroyRecognition();
-
-        const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
-        const recognition = new SpeechRecognitionAPI();
-        recognition.lang = 'en-US';
-        recognition.continuous = true;
-        recognition.interimResults = false;
-        recognition.maxAlternatives = 1;
-
-        recognition.onstart = () => {
-            isStartingRef.current = false;
-            if (mountedRef.current &&
-                stateRef.current !== 'listening' &&
-                stateRef.current !== 'processing' &&
-                stateRef.current !== 'speaking') {
-                setStateSync('wake-listening');
-            }
-        };
-
-        recognition.onresult = (event: ISpeechRecognitionEvent) => {
-            for (let i = event.resultIndex; i < event.results.length; i++) {
-                const result = event.results[i];
-                if (result.isFinal) {
-                    const text = result[0].transcript.toLowerCase().trim();
-                    const wake = wakeWordRef.current.toLowerCase();
-                    if (text.includes(wake)) {
-                        startCommandMode();
-                        return;
-                    }
-                }
-            }
-        };
-
-        recognition.onerror = (event: ISpeechRecognitionErrorEvent) => {
-            isStartingRef.current = false;
-            // Non-fatal errors: let onend handle restart
-            if (event.error === 'no-speech' || event.error === 'aborted') return;
-        };
-
-        recognition.onend = () => {
-            isStartingRef.current = false;
-            recognitionRef.current = null;
-
-            // Auto-restart wake word listening unless we moved to another state
-            if (mountedRef.current &&
-                stateRef.current !== 'listening' &&
-                stateRef.current !== 'processing' &&
-                stateRef.current !== 'speaking') {
-                clearTimer();
-                restartTimerRef.current = setTimeout(() => {
-                    if (mountedRef.current &&
-                        stateRef.current !== 'listening' &&
-                        stateRef.current !== 'processing' &&
-                        stateRef.current !== 'speaking') {
-                        startWakeWordMode();
-                    }
-                }, 800);
-            }
-        };
-
-        recognitionRef.current = recognition;
-        isStartingRef.current = true;
-
-        try {
-            recognition.start();
-        } catch {
-            isStartingRef.current = false;
-            recognitionRef.current = null;
-            clearTimer();
-            restartTimerRef.current = setTimeout(() => {
-                if (mountedRef.current) startWakeWordMode();
-            }, 1000);
-        }
-    }, [isSupported, clearTimer, destroyRecognition, setStateSync]);
-
-    /**
-     * Start command listening mode.
-     * Creates a non-continuous recognition instance that captures one command.
-     */
-    const startCommandMode = useCallback(() => {
-        if (!isSupported || !mountedRef.current) return;
-
-        clearTimer();
-        destroyRecognition();
-        cancelSpeech();
-
-        setStateSync('listening');
-        if (mountedRef.current) setInterimTranscript('');
-
-        const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
-        const recognition = new SpeechRecognitionAPI();
-        recognition.lang = langCodeRef.current;
-        recognition.continuous = false;
-        recognition.interimResults = true;
-        recognition.maxAlternatives = 1;
-
-        let commandCaptured = false;
-
-        recognition.onstart = () => {
-            isStartingRef.current = false;
-        };
-
-        recognition.onresult = (event: ISpeechRecognitionEvent) => {
-            let finalText = '';
-            let interimText = '';
-
-            for (let i = event.resultIndex; i < event.results.length; i++) {
-                const result = event.results[i];
-                if (result.isFinal) {
-                    finalText += result[0].transcript;
-                } else {
-                    interimText += result[0].transcript;
-                }
-            }
-
-            if (interimText && mountedRef.current) {
-                setInterimTranscript(interimText);
-            }
-
-            if (finalText && !commandCaptured) {
-                commandCaptured = true;
-                if (mountedRef.current) setInterimTranscript('');
-                try { recognition.stop(); } catch { /* ignore */ }
-                processCommand(finalText.trim());
-            }
-        };
-
-        recognition.onerror = (event: ISpeechRecognitionErrorEvent) => {
-            isStartingRef.current = false;
-            if (event.error === 'no-speech') {
-                if (!commandCaptured && mountedRef.current) {
-                    if (mountedRef.current) setInterimTranscript('');
-                    setStateSync('wake-listening');
-                    clearTimer();
-                    restartTimerRef.current = setTimeout(() => {
-                        if (mountedRef.current) startWakeWordMode();
-                    }, 500);
-                }
-            }
-        };
-
-        recognition.onend = () => {
-            isStartingRef.current = false;
-            recognitionRef.current = null;
-            if (mountedRef.current) setInterimTranscript('');
-
-            if (!commandCaptured && mountedRef.current &&
-                stateRef.current !== 'processing' &&
-                stateRef.current !== 'speaking') {
-                setStateSync('wake-listening');
-                clearTimer();
-                restartTimerRef.current = setTimeout(() => {
-                    if (mountedRef.current) startWakeWordMode();
-                }, 500);
-            }
-        };
-
-        recognitionRef.current = recognition;
-        isStartingRef.current = true;
-
-        try {
-            recognition.start();
-        } catch {
-            isStartingRef.current = false;
-            recognitionRef.current = null;
-            setStateSync('wake-listening');
-            clearTimer();
-            restartTimerRef.current = setTimeout(() => {
-                if (mountedRef.current) startWakeWordMode();
-            }, 1000);
-        }
-    }, [isSupported, clearTimer, destroyRecognition, cancelSpeech, setStateSync, startWakeWordMode]);
-
-    /**
-     * Process a captured voice command, speak the response, then return to wake word mode.
-     */
-    const processCommand = useCallback(async (text: string) => {
-        if (!text || processingRef.current || !mountedRef.current) return;
-        processingRef.current = true;
-
-        addToLog('user', text);
-        setStateSync('processing');
-
-        try {
-            const response = await generateResponse(text);
-            if (!mountedRef.current) return;
-
-            addToLog('assistant', response);
-            onSaveEntryRef.current?.(`User: ${text} | JARVIS: ${response}`);
-
-            setStateSync('speaking');
-            speak(response, langCodeRef.current);
-        } catch {
-            if (!mountedRef.current) return;
-            const errMsg = "I encountered an error processing your request, sir.";
-            addToLog('assistant', errMsg);
-            speak(errMsg, langCodeRef.current);
-            setStateSync('speaking');
-        } finally {
-            processingRef.current = false;
-        }
-    }, [addToLog, generateResponse, speak, setStateSync]);
-
-    // When speaking finishes, return to wake word listening
-    useEffect(() => {
-        if (!isSpeaking && assistantState === 'speaking' && mountedRef.current) {
-            setStateSync('wake-listening');
-            clearTimer();
-            restartTimerRef.current = setTimeout(() => {
-                if (mountedRef.current) startWakeWordMode();
-            }, 300);
-        }
-    }, [isSpeaking, assistantState, setStateSync, clearTimer, startWakeWordMode]);
-
-    // Auto-start wake word listening on mount
-    useEffect(() => {
-        mountedRef.current = true;
-
-        if (isSupported) {
-            const initTimer = setTimeout(() => {
-                if (mountedRef.current) {
-                    startWakeWordMode();
-                }
-            }, 500);
-            return () => {
-                clearTimeout(initTimer);
-            };
-        }
-    }, [isSupported, startWakeWordMode]);
-
-    // Cleanup on unmount
-    useEffect(() => {
-        return () => {
-            mountedRef.current = false;
-            clearTimer();
-            destroyRecognition();
-            cancelSpeech();
-        };
-    }, [clearTimer, destroyRecognition, cancelSpeech]);
-
-    // ── Public API ───────────────────────────────────────────────────────────
-
-    const manualStartListening = useCallback(() => {
-        cancelSpeech();
-        startCommandMode();
-    }, [cancelSpeech, startCommandMode]);
-
-    const manualStopListening = useCallback(() => {
-        clearTimer();
-        destroyRecognition();
-        setStateSync('wake-listening');
-        restartTimerRef.current = setTimeout(() => {
-            if (mountedRef.current) startWakeWordMode();
-        }, 500);
-    }, [clearTimer, destroyRecognition, setStateSync, startWakeWordMode]);
-
-    const startWakeWordListening = useCallback(() => {
-        startWakeWordMode();
-    }, [startWakeWordMode]);
-
-    const stopWakeWordListening = useCallback(() => {
-        clearTimer();
-        destroyRecognition();
-        setStateSync('idle');
-    }, [clearTimer, destroyRecognition, setStateSync]);
-
-    const clearLog = useCallback(() => {
-        setConversationLog([]);
-    }, []);
-
-    // Suppress unused variable warning for conversationMemory (kept for API compatibility)
-    void conversationMemory;
-
-    return {
-        assistantState,
-        conversationLog,
-        isListening: assistantState === 'listening',
-        interimTranscript,
-        isSpeaking,
-        isWakeWordActive: assistantState === 'wake-listening',
-        startListening: manualStartListening,
-        stopListening: manualStopListening,
-        startWakeWordListening,
-        stopWakeWordListening,
-        clearLog,
-        isSupported,
+  // Initialize Web Audio API for volume control
+  useEffect(() => {
+    try {
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (AudioContextClass) {
+        const ctx = new AudioContextClass();
+        const gain = ctx.createGain();
+        gain.connect(ctx.destination);
+        gain.gain.value = volume / 100;
+        audioCtxRef.current = ctx;
+        gainNodeRef.current = gain;
+      }
+    } catch {
+      // Web Audio not available
+    }
+    return () => {
+      mountedRef.current = false;
+      audioCtxRef.current?.close().catch(() => {});
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const speak = useCallback((text: string) => {
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.95;
+    utterance.pitch = 0.8;
+    utterance.volume = 1;
+    const voices = window.speechSynthesis.getVoices();
+    const preferredVoice = voices.find(v =>
+      v.name.toLowerCase().includes('male') ||
+      v.name.toLowerCase().includes('david') ||
+      v.name.toLowerCase().includes('daniel')
+    );
+    if (preferredVoice) utterance.voice = preferredVoice;
+    utterance.onstart = () => { if (mountedRef.current) setAssistantState('speaking'); };
+    utterance.onend = () => {
+      if (mountedRef.current) {
+        setAssistantState('wake-listening');
+      }
+    };
+    window.speechSynthesis.speak(utterance);
+  }, []);
+
+  const addToLog = useCallback((role: 'user' | 'jarvis', text: string): ConversationEntry => {
+    const entry: ConversationEntry = {
+      id: Date.now().toString() + Math.random().toString(36).slice(2),
+      role,
+      text,
+      timestamp: new Date(),
+    };
+    if (mountedRef.current) {
+      setConversationLog(prev => [...prev.slice(-50), entry]);
+    }
+    return entry;
+  }, []);
+
+  const adjustVolume = useCallback((direction: 'up' | 'down') => {
+    setVolume(prev => {
+      const next = direction === 'up' ? Math.min(100, prev + 10) : Math.max(0, prev - 10);
+      if (gainNodeRef.current) {
+        if (audioCtxRef.current?.state === 'suspended') audioCtxRef.current.resume();
+        gainNodeRef.current.gain.value = next / 100;
+      }
+      return next;
+    });
+  }, []);
+
+  const adjustBrightness = useCallback((direction: 'up' | 'down') => {
+    setBrightness(prev => {
+      const next = direction === 'up' ? Math.min(100, prev + 10) : Math.max(10, prev - 10);
+      const overlay = document.getElementById('brightness-overlay') as HTMLElement | null;
+      if (overlay) overlay.style.opacity = String(1 - next / 100);
+      return next;
+    });
+  }, []);
+
+  const openUrl = useCallback((siteName: string) => {
+    const key = siteName.toLowerCase().trim();
+    const url = URL_MAP[key] || (key.includes('.') ? `https://${key}` : `https://www.${key}.com`);
+    window.open(url, '_blank');
+    return url;
+  }, []);
+
+  const searchWikipedia = useCallback(async (query: string) => {
+    try {
+      const res = await fetch(
+        `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`
+      );
+      if (!res.ok) throw new Error('Not found');
+      const data = await res.json();
+      setSearchResult({
+        title: data.title,
+        summary: data.extract,
+        url: data.content_urls?.desktop?.page || `https://en.wikipedia.org/wiki/${encodeURIComponent(query)}`,
+        thumbnail: data.thumbnail?.source,
+      });
+      return data.extract as string;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const processCommand = useCallback(async (rawTranscript: string) => {
+    const normalized = normalizeTranscript(rawTranscript);
+    const command = stripWakeWord(normalized, wakeWord);
+
+    addToLog('user', rawTranscript);
+    if (onSaveEntry) onSaveEntry(`User: ${rawTranscript}`);
+    setAssistantState('processing');
+
+    let response = '';
+
+    // ── OPEN command ──────────────────────────────────────────────────────────
+    const openMatch = command.match(/^open\s+(.+)$/i);
+    if (openMatch) {
+      const target = openMatch[1].trim();
+      if (pcControls?.openUrl) {
+        pcControls.openUrl(target);
+      } else {
+        openUrl(target);
+      }
+      response = `Opening ${target} now, sir.`;
+      addToLog('jarvis', response);
+      if (onSaveEntry) onSaveEntry(`JARVIS: ${response}`);
+      speak(response);
+      return;
+    }
+
+    // ── VOLUME UP ─────────────────────────────────────────────────────────────
+    if (/volume\s*(up|increase|louder|raise)/i.test(command)) {
+      if (pcControls?.volumeUp) pcControls.volumeUp(); else adjustVolume('up');
+      response = `Volume increased, sir.`;
+      addToLog('jarvis', response);
+      speak(response);
+      return;
+    }
+
+    // ── VOLUME DOWN ───────────────────────────────────────────────────────────
+    if (/volume\s*(down|decrease|lower|reduce|quiet)/i.test(command)) {
+      if (pcControls?.volumeDown) pcControls.volumeDown(); else adjustVolume('down');
+      response = `Volume decreased, sir.`;
+      addToLog('jarvis', response);
+      speak(response);
+      return;
+    }
+
+    // ── BRIGHTNESS UP ─────────────────────────────────────────────────────────
+    if (/brightness\s*(up|increase|higher|raise)/i.test(command)) {
+      if (pcControls?.brightnessUp) pcControls.brightnessUp(); else adjustBrightness('up');
+      response = `Brightness increased, sir.`;
+      addToLog('jarvis', response);
+      speak(response);
+      return;
+    }
+
+    // ── BRIGHTNESS DOWN ───────────────────────────────────────────────────────
+    if (/brightness\s*(down|decrease|lower|reduce|dim)/i.test(command)) {
+      if (pcControls?.brightnessDown) pcControls.brightnessDown(); else adjustBrightness('down');
+      response = `Brightness reduced, sir.`;
+      addToLog('jarvis', response);
+      speak(response);
+      return;
+    }
+
+    // ── SCROLL UP ─────────────────────────────────────────────────────────────
+    if (/scroll\s*(up|top)/i.test(command)) {
+      if (pcControls?.scrollUp) pcControls.scrollUp(); else window.scrollBy({ top: -300, behavior: 'smooth' });
+      response = `Scrolling up, sir.`;
+      addToLog('jarvis', response);
+      speak(response);
+      return;
+    }
+
+    // ── SCROLL DOWN ───────────────────────────────────────────────────────────
+    if (/scroll\s*(down|bottom)/i.test(command)) {
+      if (pcControls?.scrollDown) pcControls.scrollDown(); else window.scrollBy({ top: 300, behavior: 'smooth' });
+      response = `Scrolling down, sir.`;
+      addToLog('jarvis', response);
+      speak(response);
+      return;
+    }
+
+    // ── WIKIPEDIA SEARCH ──────────────────────────────────────────────────────
+    const wikiMatch = command.match(/(?:search|look up|find|wikipedia)\s+(?:for\s+)?(.+)/i);
+    if (wikiMatch) {
+      const query = wikiMatch[1].trim();
+      response = `Searching Wikipedia for ${query}, sir.`;
+      addToLog('jarvis', response);
+      speak(response);
+      const result = await searchWikipedia(query);
+      if (result) {
+        const summary = (result as string).length > 120 ? (result as string).slice(0, 120) + '...' : result as string;
+        const followUp = `Here is what I found: ${summary}`;
+        addToLog('jarvis', followUp);
+        if (onSaveEntry) onSaveEntry(`JARVIS: ${followUp}`);
+      }
+      return;
+    }
+
+    // ── REMEMBER / NOTE ───────────────────────────────────────────────────────
+    const rememberMatch = command.match(/(?:remember|note|save)\s+(?:that\s+)?(.+)/i);
+    if (rememberMatch) {
+      const note = rememberMatch[1].trim();
+      if (onSaveEntry) onSaveEntry(`Note: ${note}`);
+      response = `Noted, sir. I will remember that.`;
+      addToLog('jarvis', response);
+      speak(response);
+      return;
+    }
+
+    // ── LANGUAGE SWITCH ───────────────────────────────────────────────────────
+    if (/switch to|change to|speak in/i.test(command)) {
+      const langMatch = command.match(/(?:switch to|change to|speak in)\s+(.+)/i);
+      if (langMatch && onLanguageChange) {
+        const lang = langMatch[1].trim();
+        onLanguageChange(lang);
+        response = `Switching to ${lang}, sir.`;
+        addToLog('jarvis', response);
+        speak(response);
+        return;
+      }
+    }
+
+    // ── MODE SWITCH ───────────────────────────────────────────────────────────
+    if (/professional mode|switch to professional/i.test(command)) {
+      if (onModeChange) onModeChange('professional');
+      response = `Switching to Professional mode. Formal protocols engaged, sir.`;
+      addToLog('jarvis', response);
+      speak(response);
+      return;
+    }
+    if (/personal mode|switch to personal/i.test(command)) {
+      if (onModeChange) onModeChange('personal');
+      response = `Switching to Personal mode. Casual interaction protocols activated.`;
+      addToLog('jarvis', response);
+      speak(response);
+      return;
+    }
+
+    // ── TIME ──────────────────────────────────────────────────────────────────
+    if (/what(?:'s| is) the time|current time|time now/i.test(command)) {
+      const now = new Date().toLocaleTimeString();
+      response = `The current time is ${now}, sir.`;
+      addToLog('jarvis', response);
+      speak(response);
+      return;
+    }
+
+    // ── DATE ──────────────────────────────────────────────────────────────────
+    if (/what(?:'s| is) the date|today(?:'s)? date|current date/i.test(command)) {
+      const today = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      response = `Today is ${today}, sir.`;
+      addToLog('jarvis', response);
+      speak(response);
+      return;
+    }
+
+    // ── HELLO ─────────────────────────────────────────────────────────────────
+    if (/^(hello|hi|hey|greetings)/i.test(command)) {
+      const hour = new Date().getHours();
+      const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+      response = `${greeting}, ${username}. All systems are online and ready to assist you.`;
+      addToLog('jarvis', response);
+      speak(response);
+      return;
+    }
+
+    // ── STATUS ────────────────────────────────────────────────────────────────
+    if (/how are you|status|system status/i.test(command)) {
+      response = `All systems operational, ${username}. Running at peak efficiency. How can I be of service?`;
+      addToLog('jarvis', response);
+      speak(response);
+      return;
+    }
+
+    // ── DEFAULT ───────────────────────────────────────────────────────────────
+    if (mode === 'professional') {
+      response = `Understood, ${username}. I'm processing your request. As a browser-based assistant, I can open websites, control volume and brightness, search Wikipedia, and manage your notes.`;
+    } else {
+      response = `I'm sorry, sir. I didn't quite catch that. You can ask me to open websites, control volume or brightness, search Wikipedia, or check the time.`;
+    }
+    addToLog('jarvis', response);
+    speak(response);
+  }, [wakeWord, username, mode, addToLog, speak, adjustVolume, adjustBrightness, openUrl, searchWikipedia, onSaveEntry, onLanguageChange, onModeChange, pcControls]);
+
+  // ── Recognition engine ────────────────────────────────────────────────────
+
+  const stopRecognition = useCallback(() => {
+    if (recognitionRef.current) {
+      try { recognitionRef.current.stop(); } catch { /* ignore */ }
+      recognitionRef.current = null;
+    }
+  }, []);
+
+  const startListening = useCallback(() => {
+    if (!isSupported) return;
+    const SpeechRecognitionAPI = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognitionAPI) return;
+
+    stopRecognition();
+    if (restartTimerRef.current) clearTimeout(restartTimerRef.current);
+
+    const recognition = new SpeechRecognitionAPI() as ISpeechRecognition;
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = language;
+    recognitionRef.current = recognition;
+
+    recognition.onstart = () => {
+      if (!mountedRef.current) return;
+      setIsListening(true);
+      if (!isAwakeRef.current) {
+        setAssistantState('wake-listening');
+      } else {
+        setAssistantState('listening');
+      }
+    };
+
+    recognition.onend = () => {
+      if (!mountedRef.current) return;
+      setIsListening(false);
+      setInterimTranscript('');
+      recognitionRef.current = null;
+      // Auto-restart if wake word mode is active
+      if (isWakeWordActiveRef.current) {
+        restartTimerRef.current = setTimeout(() => {
+          if (mountedRef.current && isWakeWordActiveRef.current) {
+            startListening();
+          }
+        }, 400);
+      } else {
+        setAssistantState('idle');
+      }
+    };
+
+    recognition.onerror = () => {
+      if (!mountedRef.current) return;
+      setIsListening(false);
+      setInterimTranscript('');
+      recognitionRef.current = null;
+      if (isWakeWordActiveRef.current) {
+        restartTimerRef.current = setTimeout(() => {
+          if (mountedRef.current && isWakeWordActiveRef.current) {
+            startListening();
+          }
+        }, 1000);
+      } else {
+        setAssistantState('idle');
+      }
+    };
+
+    recognition.onresult = (event: ISpeechRecognitionEvent) => {
+      let finalText = '';
+      let interim = '';
+
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const result = event.results[i];
+        if (result.isFinal) {
+          finalText += result[0].transcript;
+        } else {
+          interim += result[0].transcript;
+        }
+      }
+
+      if (interim && mountedRef.current) setInterimTranscript(interim);
+
+      if (finalText) {
+        setInterimTranscript('');
+        setTranscript(finalText.trim());
+
+        const normalized = normalizeTranscript(finalText);
+        const ww = wakeWord.toLowerCase();
+
+        if (!isAwakeRef.current) {
+          // Check for wake word
+          if (normalized.includes(ww) || normalized.includes('jarvis')) {
+            isAwakeRef.current = true;
+            setIsAwake(true);
+
+            // Check if command follows wake word in same utterance
+            const afterWake = stripWakeWord(normalized, wakeWord).trim();
+            if (afterWake.length > 2) {
+              // Command in same utterance — process immediately
+              processCommand(finalText.trim());
+              setTimeout(() => {
+                isAwakeRef.current = false;
+                setIsAwake(false);
+              }, 8000);
+            } else {
+              // Just wake word — acknowledge and wait for next utterance
+              speak('Yes, sir. How can I assist you?');
+              addToLog('jarvis', 'Yes, sir. How can I assist you?');
+              setTimeout(() => {
+                isAwakeRef.current = false;
+                setIsAwake(false);
+              }, 10000);
+            }
+          }
+        } else {
+          // Already awake — process as command
+          isAwakeRef.current = false;
+          setIsAwake(false);
+          processCommand(finalText.trim());
+        }
+      }
+    };
+
+    try {
+      recognition.start();
+    } catch {
+      recognitionRef.current = null;
+      setIsListening(false);
+    }
+  }, [isSupported, language, wakeWord, speak, addToLog, processCommand, stopRecognition]);
+
+  const stopListening = useCallback(() => {
+    if (restartTimerRef.current) clearTimeout(restartTimerRef.current);
+    stopRecognition();
+    setIsListening(false);
+    setAssistantState('idle');
+  }, [stopRecognition]);
+
+  const startWakeWordListening = useCallback(() => {
+    setIsWakeWordActive(true);
+    isWakeWordActiveRef.current = true;
+    startListening();
+  }, [startListening]);
+
+  const stopWakeWordListening = useCallback(() => {
+    setIsWakeWordActive(false);
+    isWakeWordActiveRef.current = false;
+    stopListening();
+  }, [stopListening]);
+
+  // Auto-start on mount
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (mountedRef.current) startListening();
+    }, 1000);
+    return () => {
+      clearTimeout(timer);
+      if (restartTimerRef.current) clearTimeout(restartTimerRef.current);
+      stopRecognition();
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return {
+    // State
+    assistantState,
+    isListening,
+    isWakeWordActive,
+    isAwake,
+    isSupported,
+    transcript,
+    interimTranscript,
+    conversationLog,
+    // Compat alias
+    conversation: conversationLog,
+    volume,
+    brightness,
+    searchResult,
+    setSearchResult,
+    // Actions
+    speak,
+    adjustVolume,
+    adjustBrightness,
+    openUrl,
+    searchWikipedia,
+    startListening,
+    stopListening,
+    startWakeWordListening,
+    stopWakeWordListening,
+    setVolume,
+    setBrightness,
+  };
 }

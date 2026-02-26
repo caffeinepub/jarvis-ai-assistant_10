@@ -1,43 +1,62 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-25T14:53:33.764Z",
+  "generatedAt": "2026-02-25T19:09:08.905Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 2,
-    "implemented": 2,
+    "total": 4,
+    "implemented": 4,
     "items": [
       {
-        "id": "REQ-13",
-        "summary": "Fix the broken voice interaction system. The Web Speech API (SpeechRecognition) must initialize correctly on page load, request microphone permission automatically, and begin continuous background listening without requiring any user click or touch. Debug and resolve any errors preventing speech recognition from starting, including browser compatibility issues, permission handling failures, or recognition not restarting after it stops. The assistant must be fully operational hands-free from the moment the dashboard loads.",
+        "id": "REQ-15",
+        "summary": "On successful login, after the transition screen completes, the assistant must greet the user with synthesized speech using SpeechSynthesis API. The spoken greeting must say 'Welcome back, Master [username]' (e.g., 'Welcome back, Master RockyRoy') using the time-based prefix (Good Morning/Afternoon/Evening). This audio greeting must play automatically without any user interaction — the text display alone is not sufficient.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/hooks/useSpeechRecognition.ts",
-          "frontend/src/hooks/useVoiceAssistant.ts",
-          "frontend/src/pages/DashboardPage.tsx",
-          "frontend/src/components/StatusIndicator.tsx",
-          "frontend/src/components/WaveformVisualizer.tsx"
+          "frontend/src/pages/TransitionScreen.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/hooks/useSpeechRecognition.ts",
-          "frontend/src/hooks/useVoiceAssistant.ts",
-          "frontend/src/pages/DashboardPage.tsx"
+          "frontend/src/pages/TransitionScreen.tsx"
         ]
       },
       {
-        "id": "REQ-14",
-        "summary": "Implement fully autonomous background operation mode. The assistant must run silently and continuously in the background — listening for the wake word, processing commands, and executing actions (open URLs, control volume/brightness, scroll, search Wikipedia, respond with speech) — all without any touch or click from the user. This includes: (1) auto-starting the wake word listener on app load, (2) automatically restarting recognition after each interaction or timeout, (3) executing all PC control commands (open app/URL, volume, brightness, scroll) purely via voice without needing UI button clicks, and (4) ensuring the full voice command loop (listen → process → respond → return to listening) cycles automatically with no manual intervention required at any step.",
+        "id": "REQ-16",
+        "summary": "Fix the voice assistant command processing engine in useVoiceAssistant.ts. Currently the assistant echoes back the user's speech verbatim instead of parsing and executing the intended command. The command parser must correctly identify intents such as 'open YouTube', 'open [URL/app name]', 'volume up/down', 'brightness up/down', 'scroll up/down', 'search Wikipedia for [topic]', and execute the corresponding action. For 'open YouTube', it must call window.open('https://www.youtube.com', '_blank') immediately. The assistant must NOT respond with 'Got it! You said: ...' — it must execute the action and confirm it with a contextual spoken response (e.g., 'Opening YouTube now, sir.').",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/hooks/useVoiceAssistant.ts",
-          "frontend/src/hooks/usePCControls.ts",
-          "frontend/src/components/VoiceControlButton.tsx",
-          "frontend/src/components/PCControlsPanel.tsx"
+          "frontend/src/hooks/useVoiceAssistant.ts"
         ],
         "matchedFiles": [
+          "frontend/src/hooks/useVoiceAssistant.ts"
+        ]
+      },
+      {
+        "id": "REQ-17",
+        "summary": "Rewrite the mentor character dialogue system in mentorMessages.ts and MentorCard.tsx so that each mentor speaks in their authentic movie/anime character voice and style. For Rengoku Kojiro specifically, all messages, motivational quotes, reminders, and spoken responses must use his actual catchphrases and speech patterns from Demon Slayer (e.g., 'SET YOUR HEART ABLAZE!', 'Umai! Umai! Umai!', 'My fire burns brighter than anyone!', addressing the user as a fellow Hashira candidate). When the mentor speaks via SpeechSynthesis, the spoken text must be in Rengoku's authentic dialogue style — not generic AI assistant responses. Extend the same authentic-style dialogue for other preset mentors (Naruto, Tony Stark, etc.).",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/utils/mentorMessages.ts",
+          "frontend/src/components/MentorCard.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/utils/mentorMessages.ts",
+          "frontend/src/components/MentorCard.tsx"
+        ]
+      },
+      {
+        "id": "REQ-18",
+        "summary": "Implement real OS-level PC control for volume and brightness via web platform APIs and progressive enhancement. For volume control: use the Web Audio API's GainNode on a persistent AudioContext to control system audio output level when possible, and additionally attempt the Media Session API. For brightness: use the Screen Brightness API (window.screen.brightness) where supported (Chrome on Android/desktop), falling back to the CSS filter overlay only as a last resort but clearly labeled as 'display overlay only'. For opening apps/URLs: use window.open() with '_blank' target which actually opens in the OS default browser. Clearly indicate in the UI which controls are operating at OS level vs. app-simulation level. Remove any false indicators that suggest OS-level control when only app-level simulation is occurring.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/usePCControls.ts",
+          "frontend/src/components/PCControlsPanel.tsx",
+          "frontend/src/hooks/useVoiceAssistant.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/usePCControls.ts",
+          "frontend/src/components/PCControlsPanel.tsx",
           "frontend/src/hooks/useVoiceAssistant.ts"
         ]
       }
@@ -45,14 +64,18 @@
   },
   "changedFiles": [
     "build-request.json",
-    "build-template/README.md",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/hooks/useSpeechRecognition.ts",
+    "frontend/src/components/ConversationLog.tsx",
+    "frontend/src/components/MentorCard.tsx",
+    "frontend/src/components/PCControlsPanel.tsx",
+    "frontend/src/components/StatusIndicator.tsx",
+    "frontend/src/hooks/usePCControls.ts",
     "frontend/src/hooks/useVoiceAssistant.ts",
     "frontend/src/pages/DashboardPage.tsx",
-    "frontend/src/types/speechRecognition.ts",
+    "frontend/src/pages/TransitionScreen.tsx",
+    "frontend/src/utils/mentorMessages.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

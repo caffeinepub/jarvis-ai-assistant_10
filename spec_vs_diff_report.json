@@ -1,36 +1,49 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-25T14:53:33.759Z",
-  "summary": "The diff implements a shared Web Speech API type system, rewrites the voice assistant hook for autonomous background operation, and updates the dashboard to show auto-listening status. The core requirements (REQ-13 and REQ-14) are substantially addressed: the useVoiceAssistant hook auto-starts wake word listening on mount, manages the full voice interaction cycle autonomously, and handles auto-restart on errors/end events. The useSpeechRecognition hook supports autoRestart. However, some specific acceptance criteria cannot be fully verified due to truncation of the hook implementations.",
+  "generatedAt": "2026-02-25T19:09:08.901Z",
+  "summary": "The diff implements all four requirements (REQ-15 through REQ-18) with substantial coverage. REQ-15 (voice greeting) is fully implemented in TransitionScreen.tsx. REQ-16 (command parsing) is addressed in useVoiceAssistant.ts with Telugu transliteration, URL mapping, and contextual responses. REQ-17 (authentic mentor dialogue) is implemented in mentorMessages.ts and MentorCard.tsx with Rengoku, Naruto, and Tony Stark in-character dialogue. REQ-18 (PC controls) is partially addressed — Web Audio GainNode is implemented, CSS overlay for brightness is used, and OS-level vs App-level labeling is present in PCControlsPanel.tsx. However, REQ-18 has a notable gap: the brightness control does NOT attempt window.screen.brightness API first before falling back to CSS overlay, and the UI labels everything as 'App Only' rather than dynamically switching between 'OS Level' and 'App Overlay' based on actual API availability.",
   "missing_requirements": [
     {
-      "id": "REQ-13",
-      "requirement": "If recognition stops or errors out, it automatically restarts within 1 second with up to 2 additional retries",
-      "reason": "The hooks reference restartTimerRef and auto-restart logic, but the implementation is truncated. The specific timing constraint (within 1 second) and retry count cannot be confirmed from the visible diff.",
+      "id": "REQ-18",
+      "requirement": "Brightness control must attempt window.screen.brightness API first; fall back to CSS overlay only if unavailable. The PCControlCapabilities interface and brightnessLevel field should reflect actual runtime capability.",
+      "reason": "In usePCControls.ts, the capabilities object hardcodes brightnessLevel as 'css-overlay' and brightnessLabel as 'CSS Overlay (App)' with no attempt to use window.screen.brightness. No conditional check for the Screen Brightness API is present anywhere in the diff.",
       "evidence": [
-        "frontend/src/hooks/useSpeechRecognition.ts",
-        "frontend/src/hooks/useVoiceAssistant.ts"
+        "frontend/src/hooks/usePCControls.ts",
+        "frontend/src/components/PCControlsPanel.tsx"
       ]
     },
     {
-      "id": "REQ-14",
-      "requirement": "The app functions correctly even when the browser window is not in focus, to the extent permitted by browser APIs",
-      "reason": "No evidence of Page Visibility API handling, document visibilitychange listeners, or any background tab consideration is visible in the diff. This acceptance criterion is not addressed in any of the shown file changes.",
+      "id": "REQ-18",
+      "requirement": "The UI must dynamically label each PC control as 'OS Level' or 'App Overlay' based on what API is actually available at runtime, not statically label all controls as 'App Only'.",
+      "reason": "PCControlsPanel.tsx uses CapabilityBadge with hardcoded isOs=false for both volume and brightness. The capabilities object in usePCControls.ts sets volumeLabel to 'Web Audio (App)' rather than 'OS Level', even though the spec requires the UI to indicate when OS-level control is active.",
       "evidence": [
-        "frontend/src/hooks/useVoiceAssistant.ts",
-        "frontend/src/pages/DashboardPage.tsx"
+        "frontend/src/components/PCControlsPanel.tsx",
+        "frontend/src/hooks/usePCControls.ts"
       ]
     }
   ],
-  "hallucinated_features": [],
-  "confidence": 0.72,
+  "hallucinated_features": [
+    {
+      "description": "An info banner in PCControlsPanel.tsx blanket-states 'Browser controls affect this app only', which contradicts the spec's intent to use and surface OS-level APIs where available.",
+      "reason": "The spec requires labeling controls as OS-level when OS APIs are in use. A static disclaimer that all controls are app-only was not requested and misleads users even when Web Audio is actively controlling audio output.",
+      "evidence": [
+        "frontend/src/components/PCControlsPanel.tsx"
+      ]
+    }
+  ],
+  "confidence": 0.82,
   "changed_files": [
     "frontend-file-summaries.txt",
-    "frontend/src/hooks/useSpeechRecognition.ts",
+    "frontend/src/components/ConversationLog.tsx",
+    "frontend/src/components/MentorCard.tsx",
+    "frontend/src/components/PCControlsPanel.tsx",
+    "frontend/src/components/StatusIndicator.tsx",
+    "frontend/src/hooks/usePCControls.ts",
     "frontend/src/hooks/useVoiceAssistant.ts",
     "frontend/src/pages/DashboardPage.tsx",
-    "frontend/src/types/speechRecognition.ts",
+    "frontend/src/pages/TransitionScreen.tsx",
+    "frontend/src/utils/mentorMessages.ts",
     "project_state.json"
   ]
 }

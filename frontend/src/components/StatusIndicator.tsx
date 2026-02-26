@@ -14,7 +14,7 @@ const STATUS_CONFIG: Record<AssistantState, { label: string; color: string; puls
 };
 
 const StatusIndicator: React.FC<StatusIndicatorProps> = ({ state }) => {
-    const config = STATUS_CONFIG[state];
+    const config = STATUS_CONFIG[state] ?? STATUS_CONFIG['idle'];
 
     return (
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-full jarvis-panel">

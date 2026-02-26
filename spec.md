@@ -1,15 +1,16 @@
 # Specification
 
 ## Summary
-**Goal:** Fix the broken voice interaction system and implement fully autonomous hands-free background operation for the JARVIS Assistant dashboard.
+**Goal:** Fix four broken features in the JARVIS Assistant: voice greeting after login, voice command execution, mentor character authentic dialogue, and PC-level control for volume/brightness.
 
 **Planned changes:**
-- Fix Web Speech API (SpeechRecognition) initialization so it starts correctly on page load without any user interaction
-- Automatically request microphone permission on dashboard load
-- Start continuous wake word listening immediately after permission is granted
-- Implement automatic restart of speech recognition within 1 second after any error, stop, or timeout
-- Ensure the full voice interaction loop (wake word → listen → process → respond → return to listening) cycles automatically with no manual input
-- Voice commands alone (no UI clicks) must trigger all supported actions: open URL, volume up/down, brightness up/down, scroll up/down, Wikipedia search
-- Keep WaveformVisualizer and StatusIndicator in sync with real-time states (wake-listening, listening, processing, speaking)
+- After login transition completes, automatically speak "Good [Morning/Afternoon/Evening], Welcome back, Master [username]" using SpeechSynthesis API — no user interaction required
+- Rewrite `useVoiceAssistant.ts` command parser to properly identify and execute intents (open YouTube/URLs, volume up/down, brightness up/down, scroll, Wikipedia search) instead of echoing back the transcript with "Got it! You said: ..."
+- Handle Telugu-script wake word + command combinations (e.g., "జార్విస్ ఓపెన్ youtube") so they correctly map to the intended action
+- After executing a command, speak a contextual confirmation (e.g., "Opening YouTube now, sir.") and return to wake-word listening
+- Rewrite `mentorMessages.ts` and `MentorCard.tsx` so Rengoku speaks using authentic Demon Slayer catchphrases and speech style (e.g., "SET YOUR HEART ABLAZE!"), and extend authentic in-character dialogue for Naruto and Tony Stark
+- Update `usePCControls.ts` and `PCControlsPanel.tsx` to use Web Audio API GainNode for volume control and `window.screen.brightness` API for brightness (falling back to CSS overlay only if unavailable)
+- Label each PC control in the UI as "OS Level" or "App Overlay" so the user knows which controls are truly system-level
+- Ensure opening URLs via voice uses `window.open(url, '_blank')` to open in the real OS browser
 
-**User-visible outcome:** The assistant starts listening for the wake word automatically when the dashboard loads, processes voice commands hands-free, responds with synthesized speech, and continuously returns to listening — all without any clicks or touch input from the user.
+**User-visible outcome:** After login the assistant greets the user by voice automatically; saying "open YouTube" or Telugu-equivalent commands actually opens YouTube in the browser; mentor characters speak in their authentic movie/anime voices; and volume/brightness controls operate at the OS level where supported, with clear UI labels indicating the control mode.
